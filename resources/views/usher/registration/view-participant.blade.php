@@ -53,18 +53,18 @@
                             Checked In Today
                         </div>
                     @elseif($hasValidTicketToday)
-                        <form action="{{ route('usher.check-in.process') }}" method="POST" class="inline">
-                            @csrf
-                            <input type="hidden" name="participant_id" value="{{ $participant->id }}">
-                            <input type="hidden" name="conference_day_id" value="{{ $today->id }}">
+                    <form action="{{ route('usher.check-in.process') }}" method="POST" class="inline">
+                        @csrf
+                        <input type="hidden" name="participant_id" value="{{ $participant->id }}">
+                        <input type="hidden" name="conference_day_id" value="{{ $today->id }}">
                             <input type="hidden" name="redirect_to" value="participant_view">
                             <input type="hidden" name="participant_id_redirect" value="{{ $participant->id }}">
-                            <button type="submit" 
+                        <button type="submit" 
                                 class="inline-flex items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-md shadow-sm text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                <i data-lucide="check-circle" class="h-4 w-4 mr-1.5"></i>
-                                Check In Today
-                            </button>
-                        </form>
+                            <i data-lucide="check-circle" class="h-4 w-4 mr-1.5"></i>
+                            Check In Today
+                        </button>
+                    </form>
                     @else
                         <div class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-500 bg-gray-50 cursor-not-allowed">
                             <i data-lucide="x-circle" class="h-4 w-4 mr-1.5"></i>

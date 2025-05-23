@@ -109,7 +109,7 @@ Route::middleware(['auth', 'role:usher', 'first.login'])->prefix('usher')->name(
     Route::post('/registration/step4', [UsherRegisterController::class, 'processStep4'])->name('registration.process_step4');
     Route::get('/registration/step5', [UsherRegisterController::class, 'showStep5'])->name('registration.step5');
     Route::post('/registration/step5', [UsherRegisterController::class, 'processStep5'])->name('registration.process_step5');
-    Route::get('/registration/complete', [UsherRegisterController::class, 'complete'])->name('registration.complete');
+    Route::post('/registration/complete', [UsherRegisterController::class, 'complete'])->name('registration.complete');
     
     // Legacy registration route - kept for backward compatibility
     Route::post('/registration', [UsherRegisterController::class, 'store'])->name('registration.store');

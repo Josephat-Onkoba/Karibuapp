@@ -11,6 +11,9 @@ use App\Models\Ticket;
 use App\Models\CheckIn;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TicketMail;
 
 class RegisterController extends Controller
 {
@@ -234,7 +237,8 @@ class RegisterController extends Controller
         $data['check_in_today'] = $validated['check_in_today'];
         Session::put('registration_data', $data);
         
-        return redirect()->route('usher.registration.complete');
+        // Process registration completion directly instead of redirecting
+        return $this->complete();
     }
     
     /**
@@ -301,6 +305,13 @@ class RegisterController extends Controller
                 'active' => true
             ]);
             
+            // Calculate and set the expiration date for the ticket
+            $ticket->expiration_date = Ticket::calculateExpirationDate(
+                in_array(1, $data['attendance_days']),
+                in_array(2, $data['attendance_days']),
+                in_array(3, $data['attendance_days'])
+            );
+            
             $participant->ticket()->save($ticket);
             
             // Check in participant for today if requested and today is one of the selected days
@@ -317,13 +328,31 @@ class RegisterController extends Controller
                 }
             }
             
+            // Send the ticket via email automatically
+            try {
+                Mail::to($participant->email)->send(new TicketMail($ticket));
+                
+                Log::info('Ticket email sent automatically after registration', [
+                    'participant_id' => $participant->id,
+                    'email' => $participant->email,
+                    'ticket_number' => $ticket->ticket_number
+                ]);
+            } catch (\Exception $e) {
+                // Log the error but don't fail the registration process
+                Log::error('Failed to send ticket email during registration', [
+                    'participant_id' => $participant->id,
+                    'error' => $e->getMessage()
+                ]);
+                // We'll still proceed with registration even if email fails
+            }
+            
             DB::commit();
             
             // Clear the session data
             Session::forget('registration_data');
             
             return redirect()->route('usher.registration.ticket', $ticket->id)
-                ->with('success', 'Participant registered successfully.');
+                ->with('success', 'Participant registered successfully. Ticket has been sent to ' . $participant->email);
                 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -395,7 +424,7 @@ class RegisterController extends Controller
         $participants = Participant::where('registered_by_user_id', Auth::id())
             ->with(['ticket', 'checkIns'])
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate(10);
             
         return view('usher.registration.my-registrations', compact('participants', 'today', 'conferenceDays'));
     }
@@ -554,7 +583,7 @@ class RegisterController extends Controller
                 'checked_in_at' => $participant->checkIns->where('conference_day_id', $day->id)->first()?->checked_in_at?->format('M j, Y g:i A'),
             ];
         }
-        
+            
         // Get all tickets for this participant
         $ticketHistory = $participant->tickets;
             

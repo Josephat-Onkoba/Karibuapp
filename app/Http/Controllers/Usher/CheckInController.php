@@ -9,9 +9,11 @@ use App\Models\ConferenceDay;
 use App\Models\CheckIn;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
+// use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TicketMail;
 
 class CheckInController extends Controller
 {
@@ -58,16 +60,16 @@ class CheckInController extends Controller
             
             $participant = Participant::with('tickets')->find($validated['participant_id']);
             $conferenceDay = ConferenceDay::find($validated['conference_day_id']);
-            
-            // Create the check-in record
+        
+        // Create the check-in record
             $checkIn = CheckIn::create([
-                'participant_id' => $validated['participant_id'],
-                'conference_day_id' => $validated['conference_day_id'],
-                'checked_by_user_id' => Auth::id(),
-                'checked_in_at' => now(),
-                'notes' => $validated['notes'] ?? null
-            ]);
-            
+            'participant_id' => $validated['participant_id'],
+            'conference_day_id' => $validated['conference_day_id'],
+            'checked_by_user_id' => Auth::id(),
+            'checked_in_at' => now(),
+            'notes' => $validated['notes'] ?? null
+        ]);
+        
             // Get the existing active ticket
             $activeTicket = Ticket::where('participant_id', $participant->id)
                           ->where('active', true)
@@ -141,22 +143,29 @@ class CheckInController extends Controller
             }
             
             DB::commit();
-            
-            // Send ticket notifications (email and SMS)
-            try {
-                Http::post(route('usher.check-in.send-ticket', ['participantId' => $participant->id]));
-            } catch (\Exception $e) {
-                // Log the error but don't fail the check-in process
-                Log::error('Failed to send ticket notifications', [
+        
+        // Send ticket notifications (email and SMS)
+        try {
+                // Send the ticket via email directly
+                Mail::to($participant->email)->send(new TicketMail($ticket));
+                
+                Log::info('Ticket email sent automatically after check-in', [
                     'participant_id' => $participant->id,
-                    'error' => $e->getMessage()
+                    'email' => $participant->email,
+                    'ticket_number' => $ticket->ticket_number
                 ]);
-            }
-            
-            // Determine where to redirect based on the redirect_to parameter
+        } catch (\Exception $e) {
+            // Log the error but don't fail the check-in process
+            Log::error('Failed to send ticket notifications', [
+                'participant_id' => $participant->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+        
+        // Determine where to redirect based on the redirect_to parameter
             if (isset($validated['redirect_to'])) {
                 if ($validated['redirect_to'] === 'my-registrations') {
-                    return redirect()->route('usher.my-registrations')
+            return redirect()->route('usher.my-registrations')
                         ->with('success', "{$participant->full_name} has been checked in successfully for day {$conferenceDay->id}.");
                 } elseif ($validated['redirect_to'] === 'participant_view' && isset($validated['participant_id_redirect'])) {
                     return redirect()->route('usher.participant.view', $validated['participant_id_redirect'])

@@ -98,6 +98,9 @@
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i data-lucide="search" class="h-4 w-4 text-gray-400"></i>
                             </div>
+                            <button type="button" id="clear-search" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer hidden">
+                                <i data-lucide="x" class="h-4 w-4"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -110,13 +113,12 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Participant</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticket Number</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticket Status</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Role</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Ticket Number</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Ticket Status</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in Status</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration Date</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Actions</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Registration Date</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200" id="participants-table-body">
@@ -133,76 +135,36 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                @if($participant->category == 'general') bg-blue-100 text-blue-800 
-                                @elseif($participant->category == 'invited') bg-purple-100 text-purple-800 
-                                @elseif($participant->category == 'internal') bg-green-100 text-green-800 
-                                @else bg-yellow-100 text-yellow-800 @endif">
-                                {{ ucfirst($participant->category) }}
+                        <td class="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                            <span class="text-sm text-gray-900">
+                                {{ ucfirst($participant->role ?? 'delegate') }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if($participant->category == 'general')
-                                @if($participant->payment_status == 'Paid via M-Pesa' || $participant->payment_status == 'Paid via Vabu')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                        {{ $participant->payment_status }}
-                                        @if($participant->payment_confirmed)
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                            </svg>
-                                        @endif
-                                    </span>
-                                @else
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                        {{ $participant->payment_status }}
-                                    </span>
-                                @endif
-                            @elseif($participant->category == 'internal')
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                                    {{ $participant->payment_status }}
-                                </span>
-                            @elseif($participant->category == 'invited' || $participant->category == 'coordinators')
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                                    {{ $participant->payment_status }}
-                                </span>
-                            @else
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                    {{ $participant->payment_status }}
-                                </span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                             @if($participant->ticket)
                             <div class="text-sm text-gray-900">{{ $participant->ticket->ticket_number }}</div>
                             @else
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">No Ticket</span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                             @if($participant->ticket)
                                 @php
-                                    $statusClass = 'bg-gray-100 text-gray-800';
+                                    $textClass = 'text-gray-900';
                                     $statusText = $participant->ticket->getValidityStatus();
                                     
                                     if (!$participant->ticket->active) {
-                                        $statusClass = 'bg-red-100 text-red-800';
+                                        $textClass = 'text-red-600';
                                     } elseif ($participant->ticket->isExpired()) {
-                                        $statusClass = 'bg-red-100 text-red-800';
+                                        $textClass = 'text-red-600';
                                     } elseif (strpos($statusText, 'Valid') !== false) {
-                                        $statusClass = 'bg-green-100 text-green-800';
+                                        $textClass = 'text-green-600';
                                     }
                                 @endphp
                                 
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusClass }}">
+                                <span class="text-sm {{ $textClass }}">
                                     {{ $statusText }}
                                 </span>
-                                
-                                @if($participant->ticket->expiration_date)
-                                <div class="mt-1 text-xs text-gray-500">
-                                    Expires: {{ $participant->ticket->expiration_date->format('M j, g:i A') }}
-                                </div>
-                                @endif
                             @else
                             <span class="text-sm text-gray-500">N/A</span>
                             @endif
@@ -228,35 +190,26 @@
                                 @endphp
                                 
                                 @if($isCheckedInToday)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                        </svg>
-                                        Checked In Today
+                                    <span class="text-sm text-green-600">
+                                        Checked In
                                     </span>
                                 @elseif($hasValidTicketToday)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                        </svg>
+                                    <span class="text-sm text-amber-600">
                                         Not Checked In
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" />
-                                        </svg>
+                                    <span class="text-sm text-gray-600">
                                         Not Valid Today
                                     </span>
                                 @endif
                             @else
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                <span class="text-sm text-gray-600">
                                     No Active Day
                                 </span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ $participant->created_at->format('M j, Y g:i A') }}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
+                            {{ $participant->created_at->format('M j') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             <div class="flex space-x-2">
@@ -310,7 +263,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-10 text-center text-sm text-gray-500">
+                        <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-500">
                             <div class="flex flex-col items-center justify-center">
                                 <i data-lucide="users" class="h-8 w-8 text-gray-400 mb-2"></i>
                                 <p>No participants registered yet</p>
@@ -329,7 +282,14 @@
         <!-- Pagination -->
         @if($participants->hasPages())
         <div class="px-6 py-4 bg-white border-t border-gray-200">
-            {{ $participants->links() }}
+            <div class="flex flex-col sm:flex-row items-center justify-between">
+                <div class="text-sm text-gray-600 mb-4 sm:mb-0">
+                    Showing {{ $participants->firstItem() ?? 0 }} to {{ $participants->lastItem() ?? 0 }} of {{ $participants->total() }} entries
+                </div>
+                <div class="pagination-links">
+                    {{ $participants->links() }}
+                </div>
+            </div>
         </div>
         @endif
     </div>
@@ -339,21 +299,83 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Search functionality
     const searchInput = document.getElementById('search-input');
+    const clearSearchBtn = document.getElementById('clear-search');
     const rows = document.querySelectorAll('.participant-row');
     
-    searchInput.addEventListener('keyup', function() {
-        const searchTerm = searchInput.value.toLowerCase();
+    // Function to perform search
+    function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
         
         rows.forEach(row => {
             const name = row.querySelector('div.text-sm.font-medium').textContent.toLowerCase();
             const email = row.querySelector('div.text-sm.text-gray-500').textContent.toLowerCase();
+            const role = row.querySelector('td:nth-child(2) span')?.textContent.toLowerCase() || '';
+            const ticketNumber = row.querySelector('td:nth-child(3) div')?.textContent.toLowerCase() || '';
             
-            if (name.includes(searchTerm) || email.includes(searchTerm)) {
+            if (searchTerm === '' || 
+                name.includes(searchTerm) || 
+                email.includes(searchTerm) || 
+                role.includes(searchTerm) || 
+                ticketNumber.includes(searchTerm)) {
                 row.style.display = '';
+                visibleCount++;
             } else {
                 row.style.display = 'none';
             }
         });
+        
+        // Show/hide the clear button
+        if (searchTerm === '') {
+            clearSearchBtn.classList.add('hidden');
+        } else {
+            clearSearchBtn.classList.remove('hidden');
+        }
+        
+        // Update no results message
+        const noResultsRow = document.getElementById('no-search-results');
+        if (visibleCount === 0 && searchTerm !== '') {
+            if (!noResultsRow) {
+                const tableBody = document.getElementById('participants-table-body');
+                const newRow = document.createElement('tr');
+                newRow.id = 'no-search-results';
+                newRow.innerHTML = `
+                    <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-500">
+                        <div class="flex flex-col items-center justify-center">
+                            <i data-lucide="search-x" class="h-8 w-8 text-gray-400 mb-2"></i>
+                            <p>No matching participants found</p>
+                            <button id="reset-search" class="mt-2 inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                <i data-lucide="rotate-ccw" class="h-4 w-4 mr-1"></i>
+                                Reset Search
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(newRow);
+                
+                // Initialize Lucide icons for the new elements
+                if (window.Lucide) {
+                    window.Lucide.createIcons();
+                }
+                
+                // Add event listener to reset button
+                document.getElementById('reset-search').addEventListener('click', function() {
+                    searchInput.value = '';
+                    performSearch();
+                });
+            }
+        } else if (noResultsRow) {
+            noResultsRow.remove();
+        }
+    }
+    
+    // Event listeners
+    searchInput.addEventListener('keyup', performSearch);
+    
+    clearSearchBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        performSearch();
+        searchInput.focus();
     });
 });
 </script>

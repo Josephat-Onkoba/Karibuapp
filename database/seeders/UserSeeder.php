@@ -15,18 +15,11 @@ class UserSeeder extends Seeder
     {
         // Create admin user
         User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@karibu.com',
+            'name' => 'Josephat Onkoba',
+            'email' => 'josephat.onkoba@zetech.ac.ke',
             'password' => Hash::make('password123'),
             'role' => 'admin',
         ]);
 
-        // Create usher user
-        User::create([
-            'name' => 'Usher User',
-            'email' => 'usher@karibu.com',
-            'password' => Hash::make('password123'),
-            'role' => 'usher',
-        ]);
     }
 } 
