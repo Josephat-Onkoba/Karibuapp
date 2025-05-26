@@ -14,9 +14,17 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TicketMail;
+use App\Services\TalkSasaSmsService;
 
 class RegisterController extends Controller
 {
+    protected $smsService;
+
+    public function __construct(TalkSasaSmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
+
     /**
      * Show the first step of registration form (Category Selection)
      */
@@ -469,13 +477,84 @@ class RegisterController extends Controller
             
             $participant->ticket()->save($ticket);
             
+            // Prepare SMS message
+            $validDays = [];
+            if ($ticket->day1_valid) $validDays[] = "Day 1";
+            if ($ticket->day2_valid) $validDays[] = "Day 2";
+            if ($ticket->day3_valid) $validDays[] = "Day 3";
+            
+            $message = "Dear {$participant->full_name}, welcome to ZURIW25 Conference!\n\n";
+            $message .= "Your registration is complete.\n";
+            $message .= "Ticket #: {$ticket->ticket_number}\n";
+            $message .= "Category: {$participant->category}\n";
+            $message .= "Valid for: " . implode(", ", $validDays) . "\n\n";
+            
+            // Add payment information if applicable
+            if ($participant->payment_status === 'Not Paid') {
+                $message .= "Payment Required: KES " . number_format($participant->payment_amount, 2) . "\n";
+                $message .= "Pay via:\n";
+                $message .= "M-Pesa Paybill: 303030\n";
+                $message .= "Account: 2031653161\n";
+                $message .= "Please complete payment to attend.";
+            } elseif ($participant->payment_status === 'Paid via M-Pesa' || $participant->payment_status === 'Paid via Vabu') {
+                $message .= "Payment Status: Confirmed\n";
+                $message .= "Amount Paid: KES " . number_format($participant->payment_amount, 2);
+            }
+            
+            // Send SMS with retry logic
+            $retryCount = 0;
+            $maxRetries = 3;
+            $smsSuccess = false;
+            
+            while ($retryCount < $maxRetries && !$smsSuccess) {
+                try {
+                    $smsResult = $this->smsService->sendSms(
+                        $participant->phone_number,
+                        $message
+                    );
+                    
+                    if ($smsResult['success']) {
+                        $smsSuccess = true;
+                    } else {
+                        $retryCount++;
+                        if ($retryCount < $maxRetries) {
+                            sleep(1); // Wait 1 second before retrying
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error('SMS sending failed attempt ' . $retryCount, [
+                        'error' => $e->getMessage(),
+                        'participant_id' => $participant->id
+                    ]);
+                    $retryCount++;
+                    if ($retryCount < $maxRetries) {
+                        sleep(1);
+                    }
+                }
+            }
+            
+            // Log registration completion
+            Log::info('Registration completed', [
+                'participant_id' => $participant->id,
+                'ticket_number' => $ticket->ticket_number,
+                'category' => $participant->category,
+                'payment_status' => $participant->payment_status,
+                'sms_success' => $smsSuccess,
+                'sms_retries' => $retryCount
+            ]);
+            
             DB::commit();
             
             // Clear registration data from session
             Session::forget('registration_data');
             
+            $successMessage = 'Registration completed successfully!';
+            if (!$smsSuccess) {
+                $successMessage .= ' However, the SMS notification could not be sent.';
+            }
+            
             return redirect()->route('usher.registration.ticket', ['ticket' => $ticket->id])
-                ->with('success', 'Registration completed successfully!');
+                ->with('success', $successMessage);
                 
         } catch (\Exception $e) {
             DB::rollBack();

@@ -22,9 +22,9 @@
                         <div class="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center 
                                     {{ $index === 1 ? 'bg-[#041E42] text-white' : ($index < 1 ? 'bg-[#041E42] text-white' : 'bg-gray-300 text-white') }}">
                             {{ $index + 1 }}
-                        </div>
+                </div>
                         <span class="mt-1 text-xs md:text-sm">{{ $step }}</span>
-                    </div>
+                </div>
                 @endforeach
             </div>
         </div>
@@ -199,7 +199,7 @@
                                 <p class="text-red-500 mt-1 text-sm">{{ $message }}</p>
                                 @enderror
                             </div>
-
+                            
                             <!-- Presenter Type -->
                             @if($data['category'] === 'presenter')
                             <div>
@@ -243,7 +243,7 @@
                                 @error('eligible_days')
                                 <p class="text-red-500 mt-1 text-sm">{{ $message }}</p>
                                 @enderror
-                            </div>
+                        </div>
                             @endif
 
                             <!-- Hidden inputs for Exhibitor -->
@@ -256,7 +256,7 @@
 
                     @endif
                 </div>
-
+                
                 <!-- Submit Button -->
                 <div class="mt-10 pt-5 border-t border-gray-200">
                 <div class="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
@@ -264,7 +264,7 @@
                     class="w-full sm:w-auto inline-flex justify-center items-center py-3 px-6 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
+                                </svg>
                         Back to Category
                     </a>
                     <button 
@@ -274,9 +274,9 @@
                         <span>Continue to Attendance</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 -mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                </div>
+                            </svg>
+                        </button>
+                    </div>
 
                 </div>
             </form>

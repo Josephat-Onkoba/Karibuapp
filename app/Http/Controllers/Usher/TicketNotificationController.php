@@ -10,9 +10,17 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TicketMail;
+use App\Services\TalkSasaSmsService;
 
 class TicketNotificationController extends Controller
 {
+    protected $smsService;
+
+    public function __construct(TalkSasaSmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
+
     /**
      * Generate and download a PDF ticket.
      *
@@ -114,18 +122,33 @@ class TicketNotificationController extends Controller
         try {
             $ticket = Ticket::with(['participant'])->findOrFail($id);
             
-            // In a real implementation, this would use an SMS gateway service
-            // SmsGateway::send($ticket->participant->phone_number, "Your ZURIW25 Conference ticket: {$ticket->ticket_number}");
+            // Prepare the SMS message
+            $message = "Your ZURIW25 Conference ticket number is: {$ticket->ticket_number}. ";
+            $message .= "Valid for: ";
+            if ($ticket->day1_valid) $message .= "Day 1, ";
+            if ($ticket->day2_valid) $message .= "Day 2, ";
+            if ($ticket->day3_valid) $message .= "Day 3";
+            $message = rtrim($message, ", ");
             
-            // Log the action for demonstration purposes
-            Log::info('Ticket SMS sent', [
-                'ticket_id' => $ticket->id,
-                'ticket_number' => $ticket->ticket_number,
-                'participant' => $ticket->participant->full_name,
-                'phone' => $ticket->participant->phone_number
-            ]);
+            // Send SMS using TalkSasa service
+            $result = $this->smsService->sendSms(
+                $ticket->participant->phone_number,
+                $message
+            );
             
-            return redirect()->back()->with('success', 'Ticket has been sent to ' . $ticket->participant->phone_number);
+            if ($result['success']) {
+                Log::info('Ticket SMS sent', [
+                    'ticket_id' => $ticket->id,
+                    'ticket_number' => $ticket->ticket_number,
+                    'participant' => $ticket->participant->full_name,
+                    'phone' => $ticket->participant->phone_number
+                ]);
+                
+                return redirect()->back()->with('success', 'Ticket has been sent to ' . $ticket->participant->phone_number);
+            }
+            
+            throw new \Exception($result['error'] ?? 'Failed to send SMS');
+            
         } catch (\Exception $e) {
             Log::error('Failed to send ticket SMS', [
                 'ticket_id' => $id,
@@ -155,20 +178,27 @@ class TicketNotificationController extends Controller
             // Send email
             Mail::to($ticket->participant->email)->send(new TicketMail($ticket));
             
-            // Log email action
-            Log::info('Ticket email sent after check-in', [
-                'ticket_id' => $ticket->id,
-                'ticket_number' => $ticket->ticket_number,
-                'participant' => $ticket->participant->full_name,
-                'email' => $ticket->participant->email
-            ]);
+            // Prepare and send SMS
+            $message = "Welcome to ZURIW25 Conference! Your ticket number is: {$ticket->ticket_number}. ";
+            $message .= "Valid for: ";
+            if ($ticket->day1_valid) $message .= "Day 1, ";
+            if ($ticket->day2_valid) $message .= "Day 2, ";
+            if ($ticket->day3_valid) $message .= "Day 3";
+            $message = rtrim($message, ", ");
             
-            // Log SMS action (SMS is mocked)
-            Log::info('Ticket SMS sent after check-in', [
+            $smsResult = $this->smsService->sendSms(
+                $ticket->participant->phone_number,
+                $message
+            );
+            
+            // Log actions
+            Log::info('Ticket notifications sent after check-in', [
                 'ticket_id' => $ticket->id,
                 'ticket_number' => $ticket->ticket_number,
                 'participant' => $ticket->participant->full_name,
-                'phone' => $ticket->participant->phone_number
+                'email' => $ticket->participant->email,
+                'phone' => $ticket->participant->phone_number,
+                'sms_success' => $smsResult['success']
             ]);
             
             return redirect()->back()->with('success', 'Ticket notifications sent successfully');
