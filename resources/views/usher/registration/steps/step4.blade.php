@@ -4,30 +4,28 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
-    <!-- Header Section -->
-    <div class="mb-6">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-[#041E42]">Registration</h1>
-                <p class="text-gray-600 mt-1">Step 4: Preview Ticket</p>
-            </div>
-        </div>
+    <!-- Sticky Header -->
+    <div class="sticky top-0 z-10 bg-white pb-4 mb-6 text-center">
+        <h1 class="text-2xl md:text-4xl font-bold text-[#041E42]">Registration</h1>
+        <p class="text-gray-600 mt-2 md:text-lg">Step 4: Preview Ticket</p>
     </div>
-
-    <!-- Steps Progress -->
-    <div class="mb-8">
+    
+    <!-- Stepper Progress -->
+    <div class="mb-10">
         <div class="max-w-4xl mx-auto">
-            <div class="relative">
-                <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
-                    <div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#041E42] w-4/5"></div>
-                </div>
-                <div class="flex text-xs text-gray-600 mt-1 justify-between">
-                    <div>Category</div>
-                    <div>Details</div>
-                    <div>Attendance</div>
-                    <div class="text-[#041E42] font-semibold">Ticket</div>
-                    <div>Check-in</div>
-                </div>
+            <div class="flex justify-between text-sm md:text-base" role="list" aria-label="Registration steps">
+                @php
+                    $steps = ['Category', 'Details', 'Attendance', 'Ticket', 'Check-in'];
+                @endphp
+                @foreach($steps as $index => $step)
+                    <div role="listitem" class="flex flex-col items-center {{ $index === 3 ? 'text-[#041E42] font-bold' : 'text-gray-400' }}" aria-current="{{ $index === 3 ? 'step' : 'false' }}">
+                        <div class="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center 
+                                    {{ $index === 3 ? 'bg-[#041E42] text-white' : ($index < 3 ? 'bg-[#041E42] text-white' : 'bg-gray-300 text-white') }}">
+                            {{ $index + 1 }}
+                        </div>
+                        <span class="mt-1 text-xs md:text-sm">{{ $step }}</span>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>
@@ -41,7 +39,7 @@
                 <div class="space-y-6">
                     <div>
                         <h3 class="text-lg font-bold text-gray-700 mb-4">Ticket Preview</h3>
-                        <p class="text-gray-600 mb-6">This is how the participant's ticket will appear. The ticket will be valid for the selected days.</p>
+                        <p class="text-gray-600 mb-6">The ticket will be valid for the selected days.</p>
                     </div>
                     
                     <!-- Ticket Preview -->
@@ -52,9 +50,9 @@
                                 <h2 class="text-base font-bold">ZURIW25</h2>
                                 <span class="text-xs text-gray-300">|</span>
                                 <p class="text-xs">Official Ticket</p>
-                                </div>
-                                <div class="text-right">
-                                <div class="text-xs text-gray-300">{{ date('F j, Y') }}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-300">{{ now()->format('F j, Y') }}</div>
                             </div>
                         </div>
                         
@@ -94,11 +92,11 @@
                                         <div class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                             VALID
                                         </div>
-                                </div>
+                                    </div>
                                     <div>
                                         <div class="text-xs text-gray-500">Role</div>
                                         <div class="text-sm">{{ $data['role'] }}</div>
-                            </div>
+                                    </div>
                                     <div>
                                         <div class="text-xs text-gray-500">Payment</div>
                                         <div class="text-sm">
@@ -120,25 +118,26 @@
                                 </div>
                             </div>
                             
-                            <!-- Contact Info -->
-                            <div class="flex justify-between text-xs border-t border-gray-100 pt-2 mb-3">
+                           <!-- Contact Info -->
+                            <div class="flex flex-col md:flex-row justify-between text-xs border-t border-gray-100 pt-2 mb-3 space-y-1 md:space-y-0 md:space-x-4">
                                 <div>
                                     <span class="text-gray-500">Email:</span>
-                                    <span class="ml-1">{{ $data['email'] }}</span>
-                        </div>
+                                    <span class="ml-1 break-all">{{ $data['email'] }}</span>
+                                </div>
                                 <div>
                                     <span class="text-gray-500">Phone:</span>
                                     <span class="ml-1">{{ $data['phone_number'] }}</span>
                                 </div>
                             </div>
+
                             
                             <!-- Attendance Days -->
                             <div class="border-t border-gray-100 pt-2">
                                 <div class="text-xs text-gray-500 mb-1">Valid for:</div>
                                 <div class="grid grid-cols-3 gap-1">
                                     @foreach($conferenceDays as $day)
-                                        <div class="flex items-center text-xs">
-                                            <svg class="h-3 w-3 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <div class="flex items-center text-xs" role="listitem">
+                                            <svg class="h-3 w-3 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                                             </svg>
                                             <span class="font-medium">{{ $day->name }}</span>
@@ -158,10 +157,10 @@
                         </div>
                     </div>
                     
-                    <div class="mt-4 bg-blue-50 border-l-4 border-blue-400 p-4">
+                    <div class="mt-4 bg-blue-50 border-l-4 border-blue-400 p-4" role="alert" aria-live="polite">
                         <div class="flex">
                             <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                     <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                                 </svg>
                             </div>
@@ -175,17 +174,17 @@
                 </div>
                 
                 <div class="mt-8 pt-5 border-t border-gray-200">
-                    <div class="flex justify-between">
-                        <a href="{{ route('usher.registration.step3') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1" viewBox="0 0 20 20" fill="currentColor">
+                    <div class="flex flex-col sm:flex-row justify-between gap-4">
+                        <a href="{{ route('usher.registration.step3') }}" class="inline-flex items-center justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
                             </svg>
                             Back to Attendance Days
                         </a>
-                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#041E42] hover:bg-[#0A2E5C] focus:outline-none">
+                        <button type="submit" class="inline-flex items-center justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#041E42] hover:bg-[#02305e] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#041E42]">
                             Continue to Check-in
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 -mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 -mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
                     </div>
@@ -194,4 +193,4 @@
         </div>
     </div>
 </div>
-@endsection 
+@endsection

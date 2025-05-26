@@ -74,12 +74,6 @@
                             @endif
                         </a>
                         
-                        <a href="{{ route('usher.check-ins') }}" 
-                           class="flex items-center px-3 py-2 text-sm font-medium {{ request()->routeIs('usher.check-ins') ? 'text-white border-b-2 border-white' : 'text-gray-300 hover:text-white hover:border-b-2 hover:border-gray-300' }}">
-                            <i data-lucide="clipboard-list" class="h-5 w-5 mr-1"></i>
-                            <span>Today's Visitors</span>
-                        </a>
-                        
                         <a href="{{ route('usher.tickets') }}" 
                            class="flex items-center px-3 py-2 text-sm font-medium {{ request()->routeIs('usher.tickets*') ? 'text-white border-b-2 border-white' : 'text-gray-300 hover:text-white hover:border-b-2 hover:border-gray-300' }}">
                             <i data-lucide="ticket" class="h-5 w-5 mr-1"></i>
@@ -91,12 +85,7 @@
                             <i data-lucide="utensils" class="h-5 w-5 mr-1"></i>
                             <span>Meals</span>
                         </a>
-                        
-                        <a href="#" 
-                           class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:border-b-2 hover:border-gray-300">
-                            <i data-lucide="search" class="h-5 w-5 mr-1"></i>
-                            <span>Search</span>
-                        </a>
+                    
                     @endif
                 </div>
             </div>
@@ -179,12 +168,6 @@
                     @endif
                 </a>
                 
-                <a href="{{ route('usher.check-ins') }}" 
-                   class="flex items-center px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('usher.check-ins') ? 'bg-[#0A2E5C] text-white' : 'text-gray-300 hover:bg-[#0A2E5C] hover:text-white' }}">
-                    <i data-lucide="clipboard-list" class="h-5 w-5 mr-2"></i>
-                    <span>Today's Visitors</span>
-                </a>
-                
                 <a href="{{ route('usher.tickets') }}" 
                    class="flex items-center px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('usher.tickets*') ? 'bg-[#0A2E5C] text-white' : 'text-gray-300 hover:bg-[#0A2E5C] hover:text-white' }}">
                     <i data-lucide="ticket" class="h-5 w-5 mr-2"></i>
@@ -196,12 +179,7 @@
                     <i data-lucide="utensils" class="h-5 w-5 mr-2"></i>
                     <span>Meals</span>
                 </a>
-                
-                <a href="#" 
-                   class="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-[#0A2E5C] hover:text-white">
-                    <i data-lucide="search" class="h-5 w-5 mr-2"></i>
-                    <span>Search</span>
-                </a>
+        
             @endif
         </div>
     </div>

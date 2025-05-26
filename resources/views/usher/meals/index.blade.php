@@ -29,31 +29,6 @@
         </div>
     @endif
     
-    @if (session('success'))
-        <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-r-md shadow-sm" role="alert">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <i data-lucide="check-circle" class="h-5 w-5 text-green-500"></i>
-                </div>
-                <div class="ml-3">
-                    <p class="font-medium">{{ session('success') }}</p>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-r-md shadow-sm" role="alert">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <i data-lucide="alert-circle" class="h-5 w-5 text-red-500"></i>
-                </div>
-                <div class="ml-3">
-                    <p class="font-medium">{{ session('error') }}</p>
-                </div>
-            </div>
-        </div>
-    @endif
     
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Meal Selection Panel -->
@@ -155,7 +130,31 @@
                                 </div>
                                 <p class="text-sm text-gray-500 mt-1">Enter only the last 4 digits of the ticket number</p>
                             </div>
-                            
+                            @if (session('success'))
+                            <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-r-md shadow-sm" role="alert">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <i data-lucide="check-circle" class="h-5 w-5 text-green-500"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="font-medium">{{ session('success') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+
+                            @if (session('error'))
+                                <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-r-md shadow-sm" role="alert">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <i data-lucide="alert-circle" class="h-5 w-5 text-red-500"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="font-medium">{{ session('error') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif                       
                             <div class="mb-6">
                                 <label class="block text-gray-700 font-semibold mb-2" for="notes">
                                     Notes (Optional)
@@ -206,6 +205,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (successMessage && ticketNumberInput) {
         ticketNumberInput.value = '';
         ticketNumberInput.focus();
+
+        setTimeout(() => {
+            successMessage.style.display = 'none';
+        }, 4000);
+    }
+
+    const errorMessage = document.querySelector('.bg-red-50');
+    if (errorMessage && ticketNumberInput) {
+        ticketNumberInput.value = '';
+        ticketNumberInput.focus();
+
+        setTimeout(() => {
+            errorMessage.style.display = 'none';
+        }, 4000);
     }
 });
 </script>

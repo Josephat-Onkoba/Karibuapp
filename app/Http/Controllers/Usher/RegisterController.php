@@ -35,7 +35,7 @@ class RegisterController extends Controller
     {
         // Get the participant categories
         $categories = [
-            'general' => 'General Participants',
+            'general' => 'Delegates',
             'exhibitor' => 'Exhibitors',
             'presenter' => 'Presenters',
             'invited' => 'Invited Guests & Speakers',

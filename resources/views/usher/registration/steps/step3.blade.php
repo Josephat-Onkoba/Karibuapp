@@ -4,30 +4,28 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
-    <!-- Header Section -->
-    <div class="mb-6">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-[#041E42]">Registration</h1>
-                <p class="text-gray-600 mt-1">Step 3: Select Attendance Days</p>
-            </div>
-        </div>
+    <!-- Sticky Header -->
+    <div class="sticky top-0 z-10 bg-white pb-4 mb-6 text-center">
+        <h1 class="text-2xl md:text-4xl font-bold text-[#041E42]">Registration</h1>
+        <p class="text-gray-600 mt-2 md:text-lg">Step 3: Select Attendance Days</p>
     </div>
 
-    <!-- Steps Progress -->
-    <div class="mb-8">
+    <!-- Stepper Progress -->
+    <div class="mb-10">
         <div class="max-w-4xl mx-auto">
-            <div class="relative">
-                <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
-                    <div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#041E42] w-3/5"></div>
-                </div>
-                <div class="flex text-xs text-gray-600 mt-1 justify-between">
-                    <div>Category</div>
-                    <div>Details</div>
-                    <div class="text-[#041E42] font-semibold">Attendance</div>
-                    <div>Ticket</div>
-                    <div>Check-in</div>
-                </div>
+            <div class="flex justify-between text-sm md:text-base">
+                @php
+                    $steps = ['Category', 'Details', 'Attendance', 'Ticket', 'Check-in'];
+                @endphp
+                @foreach($steps as $index => $step)
+                    <div class="flex flex-col items-center {{ $index === 2 ? 'text-[#041E42] font-bold' : 'text-gray-400' }}">
+                        <div class="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center 
+                                    {{ $index === 2 ? 'bg-[#041E42] text-white' : ($index < 2 ? 'bg-[#041E42] text-white' : 'bg-gray-300 text-white') }}">
+                            {{ $index + 1 }}
+                        </div>
+                        <span class="mt-1 text-xs md:text-sm">{{ $step }}</span>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>
@@ -150,24 +148,28 @@
                 </div>
                 
                 <div class="mt-8 pt-5 border-t border-gray-200">
-                    <div class="flex justify-between">
-                        <a href="{{ route('usher.registration.step2') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                            </svg>
-                            Back to Details
-                        </a>
-                        <button 
-                            type="submit" 
-                            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#041E42] hover:bg-[#0A2E5C] focus:outline-none"
-                            {{ $conferenceDays->isEmpty() ? 'disabled' : '' }}
-                        >
-                            Continue to Ticket Preview
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 -mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
+                <div class="flex flex-col sm:flex-row justify-between gap-4 sm:gap-0">
+                    <a href="{{ route('usher.registration.step2') }}"
+                    class="inline-flex items-center justify-center py-2 px-5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                        Back to Details
+                    </a>
+
+                    <button
+                        type="submit"
+                        class="inline-flex items-center justify-center py-2 px-5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#041E42] hover:bg-[#0A2E5C] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#041E42] disabled:opacity-50 disabled:cursor-not-allowed"
+                        {{ $conferenceDays->isEmpty() ? 'disabled' : '' }}
+                    >
+                        Continue to Ticket Preview
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 -mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+
                 </div>
             </form>
         </div>

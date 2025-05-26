@@ -4,35 +4,33 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
-    <!-- Header Section -->
-    <div class="mb-6">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-[#041E42]">Registration</h1>
-                <p class="text-gray-600 mt-1">Step 2: Enter Participant Details</p>
-            </div>
-        </div>
+    <!-- Sticky Header -->
+    <div class="sticky top-0 z-10 bg-white pb-4 mb-6 text-center">
+        <h1 class="text-2xl md:text-4xl font-bold text-[#041E42]">Registration</h1>
+        <p class="text-gray-600 mt-2 md:text-lg">Step 2: Enter Participant Details</p>
     </div>
 
-    <!-- Steps Progress -->
-    <div class="mb-8">
+    <!-- Stepper Progress -->
+    <div class="mb-10">
         <div class="max-w-4xl mx-auto">
-            <div class="relative">
-                <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
-                    <div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#041E42] w-2/5"></div>
-                </div>
-                <div class="flex text-xs text-gray-600 mt-1 justify-between">
-                    <div>Category</div>
-                    <div class="text-[#041E42] font-semibold">Details</div>
-                    <div>Attendance</div>
-                    <div>Ticket</div>
-                    <div>Check-in</div>
-                </div>
+            <div class="flex justify-between text-sm md:text-base">
+                @php
+                    $steps = ['Category', 'Details', 'Attendance', 'Ticket', 'Check-in'];
+                @endphp
+                @foreach($steps as $index => $step)
+                    <div class="flex flex-col items-center {{ $index === 1 ? 'text-[#041E42] font-bold' : 'text-gray-400' }}">
+                        <div class="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center 
+                                    {{ $index === 1 ? 'bg-[#041E42] text-white' : ($index < 1 ? 'bg-[#041E42] text-white' : 'bg-gray-300 text-white') }}">
+                            {{ $index + 1 }}
+                        </div>
+                        <span class="mt-1 text-xs md:text-sm">{{ $step }}</span>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>
 
-    <!-- Form Content -->
+    <!-- Form Section -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
         <div class="p-6">
             <form action="{{ route('usher.registration.process_step2') }}" method="POST" id="registration-form">
@@ -40,8 +38,8 @@
                 
                 <div class="space-y-6">
                     <div>
-                        <h3 class="text-lg font-bold text-gray-700 mb-4">Participant Details</h3>
-                        <p class="text-gray-600 mb-4">Enter the participant's personal information below</p>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Participant Details</h3>
+                        <p class="text-gray-600 mb-6">Enter the participant's personal information below</p>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -56,7 +54,7 @@
                                 required
                             >
                             @error('full_name')
-                            <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
+                            <div class="text-red-500 mt-2 text-sm">{{ $message }}</div>
                             @enderror
                         </div>
                         
@@ -71,12 +69,12 @@
                                 required
                             >
                             @error('email')
-                            <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
+                            <div class="text-red-500 mt-2 text-sm">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="phone_number" class="block text-gray-700 font-medium mb-1">Phone Number <span class="text-red-500">*</span></label>
                             <input 
@@ -88,7 +86,7 @@
                                 required
                             >
                             @error('phone_number')
-                            <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
+                            <div class="text-red-500 mt-2 text-sm">{{ $message }}</div>
                             @enderror
                         </div>
                         
@@ -105,16 +103,13 @@
                                 <option value="{{ $role }}" {{ old('role', $data['role'] ?? '') == $role ? 'selected' : '' }}>{{ $role }}</option>
                                 @endforeach
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                            </div>
                             @error('role')
-                            <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
+                            <div class="text-red-500 mt-2 text-sm">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="job_title" class="block text-gray-700 font-medium mb-1">Job Title</label>
                             <input 
@@ -139,36 +134,36 @@
                     </div>
                     
                     @if($data['category'] === 'internal')
-                    <div class="border-t border-gray-200 pt-4 mt-6">
-                        <h3 class="text-lg font-bold text-gray-700 mb-4">Internal Participant Information</h3>
-                        <p class="text-gray-600 mb-4">Fill in the appropriate field based on participant role:</p>
+                    <div class="border-t border-gray-200 pt-6 mt-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Internal Participant Information</h3>
+                        <p class="text-gray-600 mb-6">Fill in the appropriate field based on participant role:</p>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="student_admission_number" class="block text-sm font-medium text-gray-700">Student Admission Number <span class="text-gray-500">(For students only)</span></label>
+                                <label for="student_admission_number" class="block text-gray-700 font-medium mb-1">Student Admission Number <span class="text-gray-500">(For students only)</span></label>
                                 <input 
                                     type="text" 
                                     name="student_admission_number" 
                                     id="student_admission_number" 
                                     value="{{ old('student_admission_number', $data['student_admission_number'] ?? '') }}"
-                                    class="mt-1 focus:ring-[#041E42] focus:border-[#041E42] block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42]"
                                 >
                                 @error('student_admission_number')
-                                <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
+                                <div class="text-red-500 mt-2 text-sm">{{ $message }}</div>
                                 @enderror
                             </div>
                             
                             <div>
-                                <label for="staff_number" class="block text-sm font-medium text-gray-700">Staff Number <span class="text-gray-500">(For staff only)</span></label>
+                                <label for="staff_number" class="block text-gray-700 font-medium mb-1">Staff Number <span class="text-gray-500">(For staff only)</span></label>
                                 <input 
                                     type="text" 
                                     name="staff_number" 
                                     id="staff_number" 
                                     value="{{ old('staff_number', $data['staff_number'] ?? '') }}"
-                                    class="mt-1 focus:ring-[#041E42] focus:border-[#041E42] block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42]"
                                 >
                                 @error('staff_number')
-                                <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
+                                <div class="text-red-500 mt-2 text-sm">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
@@ -176,20 +171,23 @@
                     @endif
                     
                     @if(in_array($data['category'], ['general', 'exhibitor', 'presenter']))
-                    <div class="border-t border-gray-200 pt-4 mt-6">
-                        <h3 class="text-lg font-bold text-gray-700 mb-4">Payment Information</h3>
-                        <p class="text-gray-600 mb-4">Please provide payment details for this participant</p>
+                    <div class="border-t border-gray-200 pt-6 mt-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Payment Information</h3>
+                        <p class="text-gray-600 mb-6">Please provide payment details for this participant</p>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Payment Status -->
                             <div>
-                                <label for="payment_status" class="block text-gray-700 font-medium mb-1">Payment Status <span class="text-red-500">*</span></label>
+                                <label for="payment_status" class="block text-gray-700 font-semibold mb-2">
+                                    Payment Status <span class="text-red-500">*</span>
+                                </label>
                                 <select 
                                     name="payment_status" 
                                     id="payment_status" 
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42]"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#041E42] focus:border-[#041E42]"
                                     required
                                 >
-                                    <option value="">Select payment status</option>
+                                    <option value="" disabled selected>Select payment status</option>
                                     <option value="Not Paid" {{ old('payment_status', $data['payment_status'] ?? '') == 'Not Paid' ? 'selected' : '' }}>Not Paid</option>
                                     <option value="Paid via Vabu" {{ old('payment_status', $data['payment_status'] ?? '') == 'Paid via Vabu' ? 'selected' : '' }}>Paid via Vabu</option>
                                     <option value="Paid via M-Pesa" {{ old('payment_status', $data['payment_status'] ?? '') == 'Paid via M-Pesa' ? 'selected' : '' }}>Paid via M-Pesa</option>
@@ -198,105 +196,88 @@
                                     @endif
                                 </select>
                                 @error('payment_status')
-                                <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
+                                <p class="text-red-500 mt-1 text-sm">{{ $message }}</p>
                                 @enderror
                             </div>
-                            
+
+                            <!-- Presenter Type -->
                             @if($data['category'] === 'presenter')
                             <div>
-                                <label for="presenter_type" class="block text-gray-700 font-medium mb-1">Presenter Type <span class="text-red-500">*</span></label>
+                                <label for="presenter_type" class="block text-gray-700 font-semibold mb-2">
+                                    Presenter Type <span class="text-red-500">*</span>
+                                </label>
                                 <select 
                                     name="presenter_type" 
                                     id="presenter_type" 
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42]"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#041E42] focus:border-[#041E42]"
                                     required
                                 >
-                                    <option value="">Select presenter type</option>
+                                    <option value="" disabled selected>Select presenter type</option>
                                     <option value="non_student" {{ old('presenter_type', $data['presenter_type'] ?? '') == 'non_student' ? 'selected' : '' }}>Non-Student (KSH 6,000)</option>
                                     <option value="student" {{ old('presenter_type', $data['presenter_type'] ?? '') == 'student' ? 'selected' : '' }}>Student (KSH 4,000)</option>
                                     <option value="international" {{ old('presenter_type', $data['presenter_type'] ?? '') == 'international' ? 'selected' : '' }}>International (USD 100)</option>
                                 </select>
                                 @error('presenter_type')
-                                <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
+                                <p class="text-red-500 mt-1 text-sm">{{ $message }}</p>
                                 @enderror
                             </div>
                             @endif
 
+                            <!-- Eligible Days -->
                             @if($data['category'] === 'general')
                             <div>
-                                <label for="eligible_days" class="block text-gray-700 font-medium mb-1">Eligible Days <span class="text-red-500">*</span></label>
+                                <label for="eligible_days" class="block text-gray-700 font-semibold mb-2">
+                                    Eligible Days <span class="text-red-500">*</span>
+                                </label>
                                 <select 
                                     name="eligible_days" 
                                     id="eligible_days" 
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42]"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#041E42] focus:border-[#041E42]"
                                     required
                                 >
-                                    <option value="">Select number of days</option>
+                                    <option value="" disabled selected>Select number of days</option>
                                     <option value="1" {{ old('eligible_days', $data['eligible_days'] ?? '') == '1' ? 'selected' : '' }}>1 Day (KSH 3,000)</option>
                                     <option value="2" {{ old('eligible_days', $data['eligible_days'] ?? '') == '2' ? 'selected' : '' }}>2 Days (KSH 6,000)</option>
                                     <option value="3" {{ old('eligible_days', $data['eligible_days'] ?? '') == '3' ? 'selected' : '' }}>3 Days (KSH 9,000)</option>
                                 </select>
                                 @error('eligible_days')
-                                <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
+                                <p class="text-red-500 mt-1 text-sm">{{ $message }}</p>
                                 @enderror
-                        </div>
+                            </div>
                             @endif
 
+                            <!-- Hidden inputs for Exhibitor -->
                             @if($data['category'] === 'exhibitor')
                             <input type="hidden" name="payment_amount" value="30000">
                             <input type="hidden" name="eligible_days" value="3">
                             @endif
-
-                            @if($data['category'] === 'presenter')
-                            <input type="hidden" name="eligible_days" value="3">
-                            @endif
                         </div>
                     </div>
+
                     @endif
                 </div>
-                
-                <div class="mt-8 pt-5 border-t border-gray-200">
-                    <!-- Warning message for existing participant -->
-                    @if(session('warning') && session('existing_participant'))
-                    <div class="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-yellow-800">{{ session('warning') }}</h3>
-                                <div class="mt-2 text-sm text-yellow-700">
-                                    <p>A participant with similar details already exists:</p>
-                                    <ul class="list-disc list-inside mt-1">
-                                        <li>Name: {{ session('existing_participant')['full_name'] }}</li>
-                                        <li>Email: {{ session('existing_participant')['email'] }}</li>
-                                    </ul>
-                                    <p class="mt-2">Please use the Check-In feature instead of registering them again.</p>
-                                    <a href="{{ route('usher.check-in') }}" class="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
-                                        Go to Check-In
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
 
-                    <div class="flex justify-between">
-                        <a href="{{ route('usher.registration.step1') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                            <svg class="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                            </svg>
-                            Back
-                        </a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#041E42] hover:bg-[#0A2E5C] focus:outline-none">
-                            Continue to Attendance
-                            <svg class="h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
+                <!-- Submit Button -->
+                <div class="mt-10 pt-5 border-t border-gray-200">
+                <div class="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
+                    <a href="{{ route('usher.registration.step1') }}" 
+                    class="w-full sm:w-auto inline-flex justify-center items-center py-3 px-6 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                        Back to Category
+                    </a>
+                    <button 
+                        type="submit" 
+                        class="w-full sm:w-auto inline-flex items-center justify-center py-3 px-6 text-sm font-semibold rounded-lg text-white bg-[#041E42] hover:bg-[#0A2E5C] 
+                            border border-transparent shadow-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#041E42]">
+                        <span>Continue to Attendance</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 -mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+
                 </div>
             </form>
         </div>
