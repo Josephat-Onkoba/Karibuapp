@@ -6,7 +6,7 @@
 <div class="container mx-auto px-4 py-6">
     <!-- Header Section -->
     <div class="mb-6">
-        <h1 class="text-2xl md:text-3xl font-bold text-[#041E42]">Registration</h1>
+                <h1 class="text-2xl md:text-3xl font-bold text-[#041E42]">Registration</h1>
         <p class="text-gray-600 mt-1">Payment Required</p>
     </div>
 
@@ -55,11 +55,11 @@
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-600">Category:</span>
                             <span class="font-medium">{{ ucfirst($data['category']) }}</span>
-                        </div>
+                </div>
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-600">Description:</span>
                             <span class="font-medium">{{ $description }}</span>
-                        </div>
+                </div>
                         <div class="flex justify-between items-center text-lg pt-2 border-t border-gray-200 mt-2">
                             <span class="text-gray-600">Amount Due:</span>
                             <span class="font-bold text-[#041E42]">
@@ -75,9 +75,9 @@
                                     </span>
                                 @endif
                             </span>
-                        </div>
-                    </div>
-                </div>
+            </div>
+        </div>
+    </div>
 
                 <!-- Payment Method Tabs -->
                 <div class="border-b border-gray-200 mb-6">
@@ -110,7 +110,7 @@
                 @if(request('method', 'mpesa') === 'mpesa')
                 <!-- M-Pesa Payment Form -->
                 <form action="{{ route('usher.registration.process_payment') }}" method="POST" class="space-y-4">
-                    @csrf
+                @csrf
                     <input type="hidden" name="payment_method" value="mpesa">
                     
                     <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
@@ -145,7 +145,7 @@
                             placeholder="Enter M-Pesa transaction code"
                             required
                         >
-                    </div>
+                                </div>
 
                     <div>
                         <label for="payment_notes" class="block text-gray-700 font-medium mb-2 text-sm">Additional Notes</label>
@@ -156,7 +156,7 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42] text-sm"
                             placeholder="Any additional payment information"
                         ></textarea>
-                    </div>
+                                </div>
 
                     <div class="mt-8 pt-5 border-t border-gray-200">
                         <div class="flex justify-between">
@@ -193,11 +193,11 @@
                             <img src="{{ asset('images/vabu-logo.png') }}" alt="Vabu" class="h-8 w-auto mr-2">
                             Pay with Vabu
                         </a>
-                    </div>
-
+                            </div>
+                            
                     <div class="flex items-start space-x-2">
-                        <input 
-                            type="checkbox" 
+                                <input 
+                                    type="checkbox" 
                             name="vabu_payment_confirmed" 
                             id="vabu_payment_confirmed" 
                             class="h-4 w-4 mt-1 text-[#041E42] focus:ring-[#041E42] border-gray-300 rounded"
@@ -205,7 +205,7 @@
                         >
                         <label for="vabu_payment_confirmed" class="text-gray-700 text-sm">
                             I confirm that the payment has been completed via Vabu
-                        </label>
+                            </label>
                     </div>
 
                     <div>
@@ -217,28 +217,28 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42] text-sm"
                             placeholder="Any additional payment information"
                         ></textarea>
-                    </div>
-
-                    <div class="mt-8 pt-5 border-t border-gray-200">
-                        <div class="flex justify-between">
-                            <a href="{{ route('usher.registration.step2') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                </svg>
+                </div>
+                
+                <div class="mt-8 pt-5 border-t border-gray-200">
+                    <div class="flex justify-between">
+                        <a href="{{ route('usher.registration.step2') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
                                 Back
-                            </a>
+                        </a>
                             <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#041E42] hover:bg-[#0A2E5C] focus:outline-none">
                                 Continue
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 -mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 -mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
                     </div>
-                </form>
+                </div>
+            </form>
                 @endif
             </div>
         </div>
     </div>
 </div>
-@endsection 
+@endsection

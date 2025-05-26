@@ -201,7 +201,7 @@
                                 <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
                                 @enderror
                             </div>
-
+                            
                             @if($data['category'] === 'presenter')
                             <div>
                                 <label for="presenter_type" class="block text-gray-700 font-medium mb-1">Presenter Type <span class="text-red-500">*</span></label>
@@ -239,7 +239,7 @@
                                 @error('eligible_days')
                                 <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
                                 @enderror
-                            </div>
+                        </div>
                             @endif
 
                             @if($data['category'] === 'exhibitor')
@@ -367,7 +367,7 @@
         const eligibleDaysSelect = document.getElementById('eligible_days');
         const presenterTypeSelect = document.getElementById('presenter_type');
         const category = "{{ $data['category'] }}";
-
+        
         // Handle payment amount updates for general category
         if (category === 'general' && eligibleDaysSelect) {
             eligibleDaysSelect.addEventListener('change', function() {

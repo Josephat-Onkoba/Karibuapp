@@ -82,16 +82,16 @@ class CheckInController extends Controller
             
             // Get or create appropriate ticket
             $ticket = $this->getOrCreateTicket($participant, $conferenceDay);
-            
-            // Create the check-in record
+        
+        // Create the check-in record
             CheckIn::create([
-                'participant_id' => $validated['participant_id'],
-                'conference_day_id' => $validated['conference_day_id'],
-                'checked_by_user_id' => Auth::id(),
-                'checked_in_at' => now(),
-                'notes' => $validated['notes'] ?? null
-            ]);
-            
+            'participant_id' => $validated['participant_id'],
+            'conference_day_id' => $validated['conference_day_id'],
+            'checked_by_user_id' => Auth::id(),
+            'checked_in_at' => now(),
+            'notes' => $validated['notes'] ?? null
+        ]);
+        
             DB::commit();
             
             // Handle redirect based on source
@@ -206,14 +206,14 @@ class CheckInController extends Controller
      */
     private function getOrCreateTicket(Participant $participant, ConferenceDay $conferenceDay): Ticket
     {
-        // Get the existing active ticket
-        $activeTicket = Ticket::where('participant_id', $participant->id)
-                      ->where('active', true)
-                      ->first();
-        
-        // Based on conference day, get the field to check
-        $dayField = 'day' . $conferenceDay->id . '_valid';
-        
+            // Get the existing active ticket
+            $activeTicket = Ticket::where('participant_id', $participant->id)
+                          ->where('active', true)
+                          ->first();
+            
+            // Based on conference day, get the field to check
+            $dayField = 'day' . $conferenceDay->id . '_valid';
+            
         // Get participant's check-in history
         $checkInHistory = CheckIn::where('participant_id', $participant->id)
             ->orderBy('conference_day_id')
@@ -241,39 +241,39 @@ class CheckInController extends Controller
             // Expired ticket needs replacement
             $needNewTicket = true;
         }
-        
-        if ($needNewTicket) {
-            // If there's an existing active ticket, mark it as inactive
-            if ($activeTicket) {
-                $activeTicket->active = false;
-                $activeTicket->save();
-                
+            
+            if ($needNewTicket) {
+                // If there's an existing active ticket, mark it as inactive
+                if ($activeTicket) {
+                    $activeTicket->active = false;
+                    $activeTicket->save();
+                    
                 Log::info('Existing ticket marked inactive', [
-                    'participant_id' => $participant->id,
-                    'old_ticket_number' => $activeTicket->ticket_number,
+                        'participant_id' => $participant->id,
+                        'old_ticket_number' => $activeTicket->ticket_number,
                     'reason' => $isConsecutiveDay ? 'expired' : 'non_consecutive_day'
-                ]);
-            }
-            
+                    ]);
+                }
+                
             // Create a new ticket
-            $newTicket = new Ticket();
-            $newTicket->ticket_number = Ticket::generateTicketNumber();
-            $newTicket->participant_id = $participant->id;
-            $newTicket->registered_by_user_id = Auth::id();
-            
-            // Set all day fields to false by default
-            $newTicket->day1_valid = false;
-            $newTicket->day2_valid = false;
-            $newTicket->day3_valid = false;
-            
+                $newTicket = new Ticket();
+                $newTicket->ticket_number = Ticket::generateTicketNumber();
+                $newTicket->participant_id = $participant->id;
+                $newTicket->registered_by_user_id = Auth::id();
+                
+                // Set all day fields to false by default
+                $newTicket->day1_valid = false;
+                $newTicket->day2_valid = false;
+                $newTicket->day3_valid = false;
+                
             // Set the current day as valid
-            $newTicket->$dayField = true;
-            $newTicket->active = true;
-            
+                $newTicket->$dayField = true;
+                $newTicket->active = true;
+                
             // Calculate expiration date based on consecutive days
             $newTicket->expiration_date = now()->endOfDay();
-            
-            $newTicket->save();
+                
+                $newTicket->save();
             
             Log::info('New ticket generated', [
                 'participant_id' => $participant->id,
