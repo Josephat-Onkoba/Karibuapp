@@ -45,129 +45,63 @@
                     </div>
                     
                     <!-- Ticket Preview -->
-                    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+                    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
                         <!-- Ticket Header -->
-                        <div class="bg-[#041E42] px-6 py-4 text-white">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <h2 class="text-xl font-bold">ZURIW25 CONFERENCE</h2>
-                                    <p class="text-sm text-gray-200">Official Attendance Ticket</p>
+                        <div class="bg-[#041E42] px-4 py-2 text-white flex justify-between items-center">
+                            <div class="flex items-center space-x-2">
+                                <h2 class="text-base font-bold">ZURIW25</h2>
+                                <span class="text-xs text-gray-300">|</span>
+                                <p class="text-xs">Official Ticket</p>
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-sm text-gray-200">Date Issued</div>
-                                    <div class="font-medium">{{ date('F j, Y') }}</div>
-                                </div>
+                                <div class="text-xs text-gray-300">{{ date('F j, Y') }}</div>
                             </div>
                         </div>
                         
                         <!-- Ticket Body -->
-                        <div class="p-6">
-                            <!-- Ticket Number -->
-                            <div class="bg-gray-50 p-4 mb-6 rounded-lg border flex justify-between items-center">
-                                <div>
-                                    <span class="text-gray-500 text-sm">Ticket Number</span>
-                                    <h3 class="text-2xl font-bold text-[#041E42]">ZU-RIW25-{{ mt_rand(1000, 9999) }}</h3>
-                                </div>
-                                <div class="text-center">
-                                    <div class="text-xs text-gray-500 mb-1">Attendance Status</div>
-                                    <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        VALID
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Participant Info -->
-                            <div class="mb-6">
-                                <h3 class="text-lg font-semibold text-[#041E42] mb-4 border-b pb-2">Participant Information</h3>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+                        <div class="p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <!-- Left Column -->
+                                <div class="space-y-2">
                                     <div>
-                                        <div class="text-sm text-gray-500">Full Name</div>
-                                        <div class="font-medium">{{ $data['full_name'] }}</div>
+                                        <div class="text-xs text-gray-500">Ticket No.</div>
+                                        <div class="text-sm font-bold text-[#041E42]">ZU-RIW25-{{ mt_rand(1000, 9999) }}</div>
                                     </div>
-                                    
                                     <div>
-                                        <div class="text-sm text-gray-500">Email Address</div>
-                                        <div class="font-medium">{{ $data['email'] }}</div>
+                                        <div class="text-xs text-gray-500">Name</div>
+                                        <div class="text-sm font-medium">{{ $data['full_name'] }}</div>
                                     </div>
-                                    
                                     <div>
-                                        <div class="text-sm text-gray-500">Phone Number</div>
-                                        <div class="font-medium">{{ $data['phone_number'] }}</div>
-                                    </div>
-                                    
-                                    <div>
-                                        <div class="text-sm text-gray-500">Role</div>
-                                        <div class="font-medium">{{ $data['role'] }}</div>
-                                    </div>
-                                    
-                                    @if(isset($data['organization']) && $data['organization'])
-                                    <div>
-                                        <div class="text-sm text-gray-500">Organization</div>
-                                        <div class="font-medium">{{ $data['organization'] }}</div>
-                                    </div>
-                                    @endif
-                                    
-                                    @if(isset($data['job_title']) && $data['job_title'])
-                                    <div>
-                                        <div class="text-sm text-gray-500">Job Title</div>
-                                        <div class="font-medium">{{ $data['job_title'] }}</div>
-                                    </div>
-                                    @endif
-                                    
-                                    <div>
-                                        <div class="text-sm text-gray-500">Category</div>
-                                        <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                                        <div class="text-xs text-gray-500">Category</div>
+                                        <div class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                             @php
                                                 $categories = [
-                                                    'general' => 'General Participant',
-                                                    'invited' => 'Invited Guest',
-                                                    'internal' => 'Internal Participant',
-                                                    'coordinators' => 'Session Coordinator'
+                                                    'general' => 'General',
+                                                    'invited' => 'Invited',
+                                                    'internal' => 'Internal',
+                                                    'coordinators' => 'Coordinator'
                                                 ];
                                             @endphp
                                             {{ $categories[$data['category']] ?? ucfirst($data['category']) }}
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <!-- Attendance Days -->
-                            <div class="mb-6">
-                                <h3 class="text-lg font-semibold text-[#041E42] mb-4 border-b pb-2">Attendance Days</h3>
                                 
-                                <div class="space-y-3">
-                                    @foreach($conferenceDays as $day)
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-5 w-5 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                </svg>
-                                            </div>
-                                            <div class="ml-3">
-                                                <span class="font-medium">{{ $day->name }}</span>
-                                                <span class="text-sm text-gray-500 ml-2">{{ \Carbon\Carbon::parse($day->date)->format('F j, Y') }}</span>
-                                                @if($day->date->isToday())
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 ml-2">Today</span>
-                                                @elseif($day->date->isPast())
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 ml-2">Past</span>
-                                                @else
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 ml-2">Upcoming</span>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                            
-                            <!-- Payment Info -->
-                            <div class="mb-6">
-                                <h3 class="text-lg font-semibold text-[#041E42] mb-4 border-b pb-2">Payment Information</h3>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+                                <!-- Right Column -->
+                                <div class="space-y-2 text-right">
                                     <div>
-                                        <div class="text-sm text-gray-500">Payment Status</div>
-                                        <div class="font-medium">
+                                        <div class="text-xs text-gray-500">Status</div>
+                                        <div class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            VALID
+                                        </div>
+                                </div>
+                                    <div>
+                                        <div class="text-xs text-gray-500">Role</div>
+                                        <div class="text-sm">{{ $data['role'] }}</div>
+                            </div>
+                                    <div>
+                                        <div class="text-xs text-gray-500">Payment</div>
+                                        <div class="text-sm">
                                             @if($data['category'] === 'general')
                                                 @if(isset($data['payment_status']) && $data['payment_status'] == 'Not Paid')
                                                     <span class="text-red-600">Not Paid</span>
@@ -179,24 +113,48 @@
                                             @elseif($data['category'] === 'internal')
                                                 <span class="text-blue-600">Waived</span>
                                             @else
-                                                <span class="text-blue-600">Not Applicable</span>
+                                                <span class="text-blue-600">N/A</span>
                                             @endif
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Contact Info -->
+                            <div class="flex justify-between text-xs border-t border-gray-100 pt-2 mb-3">
+                                <div>
+                                    <span class="text-gray-500">Email:</span>
+                                    <span class="ml-1">{{ $data['email'] }}</span>
+                        </div>
+                                <div>
+                                    <span class="text-gray-500">Phone:</span>
+                                    <span class="ml-1">{{ $data['phone_number'] }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Attendance Days -->
+                            <div class="border-t border-gray-100 pt-2">
+                                <div class="text-xs text-gray-500 mb-1">Valid for:</div>
+                                <div class="grid grid-cols-3 gap-1">
+                                    @foreach($conferenceDays as $day)
+                                        <div class="flex items-center text-xs">
+                                            <svg class="h-3 w-3 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                            </svg>
+                                            <span class="font-medium">{{ $day->name }}</span>
+                                            @if($day->date->isToday())
+                                                <span class="ml-1 px-1 bg-green-100 text-green-800 rounded text-[10px]">Today</span>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Ticket Footer -->
-                        <div class="bg-gray-50 px-6 py-4 border-t">
-                            <div class="flex justify-between text-sm text-gray-600">
-                                <div>
-                                    <p>Please present this ticket along with your ID at the entrance.</p>
-                                </div>
-                                <div class="text-right">
-                                    <p>Valid only for the dates indicated above.</p>
-                                </div>
-                            </div>
+                        <div class="bg-gray-50 px-4 py-2 border-t text-[10px] text-gray-500 flex justify-between items-center">
+                            <div>Present with ID</div>
+                            <div>Valid only for dates shown</div>
                         </div>
                     </div>
                     
@@ -209,7 +167,7 @@
                             </div>
                             <div class="ml-3">
                                 <p class="text-sm text-blue-700">
-                                    After check-in, this ticket will be sent to the participant via email and text message.
+                                    After registration is complete, this ticket will be sent to the participant via email and text message.
                                 </p>
                             </div>
                         </div>

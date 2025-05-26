@@ -36,13 +36,17 @@ class RegisterController extends Controller
         // Get the participant categories
         $categories = [
             'general' => 'General Participants',
+            'exhibitor' => 'Exhibitors',
+            'presenter' => 'Presenters',
             'invited' => 'Invited Guests & Speakers',
             'internal' => 'Internal Participants',
             'coordinators' => 'Session Coordinators'
         ];
         
         $categoryDescriptions = [
-            'general' => 'Delegates, Exhibitors, Conference Presenters',
+            'general' => 'Delegates and other general participants',
+            'exhibitor' => 'Exhibition participants (KSH 30,000)',
+            'presenter' => 'Conference Presenters (Student: KSH 4,000, Non-Student: KSH 6,000, International: USD 100)',
             'invited' => 'Chief Guests, Guests, Keynote Speakers, Panelists',
             'internal' => 'Staff, Students',
             'coordinators' => 'Secretariat, Moderators, Rapporteurs'
@@ -60,7 +64,7 @@ class RegisterController extends Controller
     public function processStep1(Request $request)
     {
         $validated = $request->validate([
-            'category' => 'required|string|in:general,invited,internal,coordinators',
+            'category' => 'required|string|in:general,exhibitor,presenter,invited,internal,coordinators',
         ]);
         
         // Store the form data in the session
@@ -89,6 +93,38 @@ class RegisterController extends Controller
     }
     
     /**
+     * Check if a participant already exists
+     */
+    public function checkExistingParticipant(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'full_name' => 'required|string'
+        ]);
+
+        $participant = Participant::where('email', $request->email)
+            ->orWhere('full_name', $request->full_name)
+            ->with(['ticket' => function($query) {
+                $query->where('active', true);
+            }])
+            ->first();
+
+        if ($participant) {
+            return response()->json([
+                'exists' => true,
+                'participant' => [
+                    'id' => $participant->id,
+                    'full_name' => $participant->full_name,
+                    'email' => $participant->email,
+                    'has_active_ticket' => $participant->ticket !== null
+                ]
+            ]);
+        }
+
+        return response()->json(['exists' => false]);
+    }
+    
+    /**
      * Process step 2 (Participant Details)
      */
     public function processStep2(Request $request)
@@ -106,30 +142,121 @@ class RegisterController extends Controller
             'role' => 'required|string|max:255',
         ];
         
-        // Add payment validation rules for general category
-        if ($category === 'general') {
-            $validationRules['payment_status'] = 'required|string|in:Not Paid,Paid via Vabu,Paid via M-Pesa,Complimentary';
-            $validationRules['payment_confirmed'] = 'nullable|boolean';
-            $validationRules['payment_notes'] = 'nullable|string';
-        }
-        
-        // Add validation rules for internal participants based on role
-        if ($category === 'internal') {
-            $role = $request->input('role');
-            
-            // Make fields optional instead of required
-            $validationRules['student_admission_number'] = 'nullable|string|max:50';
-            $validationRules['staff_number'] = 'nullable|string|max:50';
+        // Add category-specific validation rules
+        switch ($category) {
+            case 'general':
+                $validationRules['payment_status'] = 'required|string|in:Not Paid,Paid via Vabu,Paid via M-Pesa,Waived';
+                if ($request->input('payment_status') !== 'Not Paid' && $request->input('payment_status') !== 'Waived') {
+                    $validationRules['eligible_days'] = 'required|integer|in:1,2,3';
+                }
+                break;
+                
+            case 'exhibitor':
+                $validationRules['payment_status'] = 'required|string|in:Not Paid,Paid via Vabu,Paid via M-Pesa';
+                break;
+                
+            case 'presenter':
+                $validationRules['presenter_type'] = 'required|string|in:non_student,student,international';
+                $validationRules['payment_status'] = 'required|string|in:Not Paid,Paid via Vabu,Paid via M-Pesa';
+                break;
+                
+            case 'internal':
+                if ($request->input('role') === 'Student') {
+                    $validationRules['student_admission_number'] = 'required|string|max:50';
+                } elseif ($request->input('role') === 'Staff') {
+                    $validationRules['staff_number'] = 'required|string|max:50';
+                }
+                break;
         }
         
         $validated = $request->validate($validationRules);
+        
+        // Check for existing participant
+        $fullName = strtolower(trim($validated['full_name']));
+        $nameParts = explode(' ', $fullName);
+        sort($nameParts);
+        $normalizedName = implode(' ', $nameParts);
+
+        $existingParticipant = Participant::where(function($query) use ($validated, $normalizedName) {
+            $query->where('email', $validated['email'])
+                ->orWhereRaw('LOWER(TRIM(full_name)) = ?', [$normalizedName]);
+        })
+        ->with(['ticket' => function($query) {
+            $query->where('active', true);
+        }])
+        ->first();
+
+        if ($existingParticipant) {
+            $data = array_merge($data, $validated);
+            Session::put('registration_data', $data);
+
+            return redirect()->route('usher.registration.step2')
+                ->with('warning', 'This participant is already registered.')
+                ->with('existing_participant', [
+                    'full_name' => $existingParticipant->full_name,
+                    'email' => $existingParticipant->email,
+                    'has_active_ticket' => $existingParticipant->ticket !== null
+                ]);
+        }
+        
+        // Set default values based on category
+        switch ($category) {
+            case 'exhibitor':
+                $validated['eligible_days'] = 3;
+                $validated['payment_amount'] = Participant::EXHIBITOR_FEE;
+                break;
+                
+            case 'presenter':
+                $validated['eligible_days'] = 3;
+                switch ($validated['presenter_type']) {
+                    case 'non_student':
+                        $validated['payment_amount'] = Participant::PRESENTER_NON_STUDENT_FEE;
+                        break;
+                    case 'student':
+                        $validated['payment_amount'] = Participant::PRESENTER_STUDENT_FEE;
+                        break;
+                    case 'international':
+                        $validated['payment_amount'] = Participant::PRESENTER_INTERNATIONAL_FEE;
+                        break;
+                }
+                break;
+                
+            case 'general':
+                if ($validated['payment_status'] === 'Waived') {
+                    $validated['payment_confirmed'] = true;
+                    $validated['eligible_days'] = 3;
+                } else {
+                    $days = $validated['eligible_days'] ?? 1;
+                    $validated['payment_amount'] = match($days) {
+                        1 => 3000,
+                        2 => 6000,
+                        3 => 9000,
+                        default => 3000,
+                    };
+                }
+                break;
+                
+            case 'invited':
+            case 'coordinators':
+                $validated['payment_status'] = 'Not Applicable';
+                $validated['payment_confirmed'] = true;
+                $validated['eligible_days'] = 3;
+                break;
+                
+            case 'internal':
+                $validated['payment_status'] = 'Waived';
+                $validated['payment_confirmed'] = true;
+                $validated['eligible_days'] = 3;
+                break;
+        }
         
         // Store the form data in the session
         $data = array_merge($data, $validated);
         Session::put('registration_data', $data);
         
-        // If general category and payment status is "Not Paid", redirect to payment form
-        if ($category === 'general' && $validated['payment_status'] === 'Not Paid') {
+        // If payment is required but not paid, redirect to payment form
+        if (in_array($category, ['general', 'exhibitor', 'presenter']) 
+            && $validated['payment_status'] === 'Not Paid') {
             return redirect()->route('usher.registration.payment');
         }
         
@@ -169,6 +296,22 @@ class RegisterController extends Controller
             'attendance_days' => 'required|array|min:1',
             'attendance_days.*' => 'exists:conference_days,id',
         ]);
+        
+        // Get the selected conference days
+        $selectedDays = ConferenceDay::whereIn('id', $validated['attendance_days'])
+            ->where('active', true)
+            ->get();
+            
+        // Check if any selected day is in the past
+        $pastDays = $selectedDays->filter(function($day) {
+            return $day->date->isPast() && !$day->date->isToday();
+        });
+        
+        if ($pastDays->isNotEmpty()) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['attendance_days' => 'You cannot select past conference days.']);
+        }
         
         // Store the form data in the session
         $data = Session::get('registration_data', []);
@@ -246,15 +389,12 @@ class RegisterController extends Controller
      */
     public function complete()
     {
-        // Check if all steps are completed
         $data = Session::get('registration_data', []);
-        if (!isset($data['category']) || !isset($data['full_name']) || 
-            !isset($data['attendance_days']) || !isset($data['check_in_today'])) {
+        if (!isset($data['category']) || !isset($data['full_name'])) {
             return redirect()->route('usher.registration.step1');
         }
         
         try {
-            // Begin transaction
             DB::beginTransaction();
             
             // Create participant
@@ -274,20 +414,34 @@ class RegisterController extends Controller
             // Set payment data based on category
             switch ($data['category']) {
                 case 'general':
-                    // For general category, use the payment status from the form
                     $participantData['payment_status'] = $data['payment_status'] ?? 'Not Paid';
-                    $participantData['payment_confirmed'] = isset($data['payment_confirmed']) && $data['payment_confirmed'] ? true : false;
+                    $participantData['payment_confirmed'] = isset($data['payment_confirmed']) && $data['payment_confirmed'];
+                    $participantData['payment_amount'] = $data['payment_amount'] ?? null;
+                    $participantData['eligible_days'] = $data['eligible_days'] ?? null;
+                    break;
+                    
+                case 'exhibitor':
+                    $participantData['payment_status'] = $data['payment_status'] ?? 'Not Paid';
+                    $participantData['payment_confirmed'] = isset($data['payment_confirmed']) && $data['payment_confirmed'];
+                    $participantData['payment_amount'] = $data['payment_amount'] ?? Participant::EXHIBITOR_FEE;
+                    $participantData['eligible_days'] = 3; // Full conference period
+                    break;
+                    
+                case 'presenter':
+                    $participantData['payment_status'] = $data['payment_status'] ?? 'Not Paid';
+                    $participantData['payment_confirmed'] = isset($data['payment_confirmed']) && $data['payment_confirmed'];
+                    $participantData['presenter_type'] = $data['presenter_type'];
+                    $participantData['payment_amount'] = $data['payment_amount'] ?? null;
+                    $participantData['eligible_days'] = 3; // Full conference period
                     break;
                     
                 case 'invited':
                 case 'coordinators':
-                    // For invited guests/speakers and coordinators, payment is Not Applicable
                     $participantData['payment_status'] = 'Not Applicable';
                     $participantData['payment_confirmed'] = true;
                     break;
                     
                 case 'internal':
-                    // For internal participants (staff and students), payment is Waived
                     $participantData['payment_status'] = 'Waived';
                     $participantData['payment_confirmed'] = true;
                     break;
@@ -295,69 +449,39 @@ class RegisterController extends Controller
             
             $participant = Participant::create($participantData);
             
-            // Generate ticket
+            // Generate ticket with validity based on eligible days or category
+            $eligibleDays = $participantData['eligible_days'] ?? 3;
             $ticket = new Ticket([
                 'ticket_number' => Ticket::generateTicketNumber(),
                 'registered_by_user_id' => Auth::id(),
-                'day1_valid' => in_array(1, $data['attendance_days']),
-                'day2_valid' => in_array(2, $data['attendance_days']),
-                'day3_valid' => in_array(3, $data['attendance_days']),
+                'day1_valid' => $eligibleDays >= 1,
+                'day2_valid' => $eligibleDays >= 2,
+                'day3_valid' => $eligibleDays >= 3,
                 'active' => true
             ]);
             
-            // Calculate and set the expiration date for the ticket
+            // Calculate and set expiration date
             $ticket->expiration_date = Ticket::calculateExpirationDate(
-                in_array(1, $data['attendance_days']),
-                in_array(2, $data['attendance_days']),
-                in_array(3, $data['attendance_days'])
+                $eligibleDays >= 1,
+                $eligibleDays >= 2,
+                $eligibleDays >= 3
             );
             
             $participant->ticket()->save($ticket);
             
-            // Check in participant for today if requested and today is one of the selected days
-            if ($data['check_in_today']) {
-                $today = ConferenceDay::getToday();
-                
-                if ($today && in_array($today->id, $data['attendance_days'])) {
-                    CheckIn::create([
-                        'participant_id' => $participant->id,
-                        'conference_day_id' => $today->id,
-                        'checked_by_user_id' => Auth::id(),
-                        'checked_in_at' => now()
-                    ]);
-                }
-            }
-            
-            // Send the ticket via email automatically
-            try {
-                Mail::to($participant->email)->send(new TicketMail($ticket));
-                
-                Log::info('Ticket email sent automatically after registration', [
-                    'participant_id' => $participant->id,
-                    'email' => $participant->email,
-                    'ticket_number' => $ticket->ticket_number
-                ]);
-            } catch (\Exception $e) {
-                // Log the error but don't fail the registration process
-                Log::error('Failed to send ticket email during registration', [
-                    'participant_id' => $participant->id,
-                    'error' => $e->getMessage()
-                ]);
-                // We'll still proceed with registration even if email fails
-            }
-            
             DB::commit();
             
-            // Clear the session data
+            // Clear registration data from session
             Session::forget('registration_data');
             
-            return redirect()->route('usher.registration.ticket', $ticket->id)
-                ->with('success', 'Participant registered successfully. Ticket has been sent to ' . $participant->email);
+            return redirect()->route('usher.registration.ticket', ['ticket' => $ticket->id])
+                ->with('success', 'Registration completed successfully!');
                 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Registration error: ' . $e->getMessage());
             return redirect()->route('usher.registration.step1')
-                ->with('error', 'Failed to register participant. ' . $e->getMessage());
+                ->with('error', 'An error occurred during registration. Please try again.');
         }
     }
     
@@ -399,7 +523,9 @@ class RegisterController extends Controller
     private function getCategoryRoles($category)
     {
         $roles = [
-            'general' => ['Delegate', 'Exhibitor', 'Conference Presenter'],
+            'general' => ['Delegate'],
+            'exhibitor' => ['Exhibitor'],
+            'presenter' => ['Conference Presenter'],
             'invited' => ['Chief Guest', 'Guest', 'Keynote Speaker', 'Panelist'],
             'internal' => ['Staff', 'Student'],
             'coordinators' => ['Secretariat', 'Moderator', 'Rapporteur']
@@ -445,7 +571,7 @@ class RegisterController extends Controller
     private function legacyStoreMethod(Request $request)
     {
         $validated = $request->validate([
-            'category' => 'required|string|in:general,invited,internal,coordinators',
+            'category' => 'required|string|in:general,exhibitor,presenter,invited,internal,coordinators',
             'full_name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'phone_number' => 'required|string|max:20',

@@ -231,7 +231,7 @@
                                     @php
                                         $canCheckIn = false;
                                         if (($today->id == 1 && $participant->ticket->day1_valid) || 
-                                            ($today->id == 2 && $participant->ticket->day2_valid) || 
+                                     ($today->id == 2 && $participant->ticket->day2_valid) || 
                                             ($today->id == 3 && $participant->ticket->day3_valid)) {
                                             // Check if ticket is active and not expired
                                             $canCheckIn = $participant->ticket->active && !$participant->ticket->isExpired();
@@ -287,7 +287,7 @@
                     Showing {{ $participants->firstItem() ?? 0 }} to {{ $participants->lastItem() ?? 0 }} of {{ $participants->total() }} entries
                 </div>
                 <div class="pagination-links">
-                    {{ $participants->links() }}
+            {{ $participants->links() }}
                 </div>
             </div>
         </div>
@@ -296,9 +296,9 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Search functionality
-    const searchInput = document.getElementById('search-input');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
     const clearSearchBtn = document.getElementById('clear-search');
     const rows = document.querySelectorAll('.participant-row');
     
@@ -318,12 +318,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 email.includes(searchTerm) || 
                 role.includes(searchTerm) || 
                 ticketNumber.includes(searchTerm)) {
-                row.style.display = '';
+                    row.style.display = '';
                 visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
+                } else {
+                    row.style.display = 'none';
+                }
+            });
         
         // Show/hide the clear button
         if (searchTerm === '') {
@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function() {
         searchInput.value = '';
         performSearch();
         searchInput.focus();
+        });
     });
-});
 </script>
 @endsection 

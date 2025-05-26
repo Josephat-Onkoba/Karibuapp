@@ -97,7 +97,7 @@
                             <select 
                                 name="role" 
                                 id="role" 
-                                class="appearance-none w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42] pr-10"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42]"
                                 required
                             >
                                 <option value="">Select a role</option>
@@ -175,7 +175,7 @@
                     </div>
                     @endif
                     
-                    @if($data['category'] === 'general')
+                    @if(in_array($data['category'], ['general', 'exhibitor', 'presenter']))
                     <div class="border-t border-gray-200 pt-4 mt-6">
                         <h3 class="text-lg font-bold text-gray-700 mb-4">Payment Information</h3>
                         <p class="text-gray-600 mb-4">Please provide payment details for this participant</p>
@@ -193,55 +193,107 @@
                                     <option value="Not Paid" {{ old('payment_status', $data['payment_status'] ?? '') == 'Not Paid' ? 'selected' : '' }}>Not Paid</option>
                                     <option value="Paid via Vabu" {{ old('payment_status', $data['payment_status'] ?? '') == 'Paid via Vabu' ? 'selected' : '' }}>Paid via Vabu</option>
                                     <option value="Paid via M-Pesa" {{ old('payment_status', $data['payment_status'] ?? '') == 'Paid via M-Pesa' ? 'selected' : '' }}>Paid via M-Pesa</option>
-                                    <option value="Complimentary" {{ old('payment_status', $data['payment_status'] ?? '') == 'Complimentary' ? 'selected' : '' }}>Complimentary</option>
+                                    @if($data['category'] === 'general')
+                                    <option value="Waived" {{ old('payment_status', $data['payment_status'] ?? '') == 'Waived' ? 'selected' : '' }}>Waived</option>
+                                    @endif
                                 </select>
                                 @error('payment_status')
                                 <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
                                 @enderror
                             </div>
-                            
+
+                            @if($data['category'] === 'presenter')
                             <div>
-                                <label for="payment_confirmed" class="flex items-center text-gray-700 font-medium mt-5">
-                                    <input 
-                                        type="checkbox" 
-                                        name="payment_confirmed" 
-                                        id="payment_confirmed" 
-                                        value="1" 
-                                        {{ old('payment_confirmed', $data['payment_confirmed'] ?? '') ? 'checked' : '' }}
-                                        class="focus:ring-[#041E42] h-5 w-5 text-[#041E42] border-gray-300 rounded mr-2"
-                                    >
-                                    <span>Payment Confirmed</span>
-                                </label>
-                                <p class="text-sm text-gray-500 mt-1 ml-7">Check this box if payment has been verified</p>
+                                <label for="presenter_type" class="block text-gray-700 font-medium mb-1">Presenter Type <span class="text-red-500">*</span></label>
+                                <select 
+                                    name="presenter_type" 
+                                    id="presenter_type" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42]"
+                                    required
+                                >
+                                    <option value="">Select presenter type</option>
+                                    <option value="non_student" {{ old('presenter_type', $data['presenter_type'] ?? '') == 'non_student' ? 'selected' : '' }}>Non-Student (KSH 6,000)</option>
+                                    <option value="student" {{ old('presenter_type', $data['presenter_type'] ?? '') == 'student' ? 'selected' : '' }}>Student (KSH 4,000)</option>
+                                    <option value="international" {{ old('presenter_type', $data['presenter_type'] ?? '') == 'international' ? 'selected' : '' }}>International (USD 100)</option>
+                                </select>
+                                @error('presenter_type')
+                                <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
+                                @enderror
                             </div>
-                        </div>
-                        
-                        <div class="mt-4">
-                            <label for="payment_notes" class="block text-gray-700 font-medium mb-1">Payment Notes</label>
-                            <textarea 
-                                name="payment_notes" 
-                                id="payment_notes" 
-                                rows="2" 
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42]"
-                                placeholder="Enter details about the payment (e.g., M-Pesa transaction code, receipt number)"
-                            >{{ old('payment_notes', $data['payment_notes'] ?? '') }}</textarea>
+                            @endif
+
+                            @if($data['category'] === 'general')
+                            <div>
+                                <label for="eligible_days" class="block text-gray-700 font-medium mb-1">Eligible Days <span class="text-red-500">*</span></label>
+                                <select 
+                                    name="eligible_days" 
+                                    id="eligible_days" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42]"
+                                    required
+                                >
+                                    <option value="">Select number of days</option>
+                                    <option value="1" {{ old('eligible_days', $data['eligible_days'] ?? '') == '1' ? 'selected' : '' }}>1 Day (KSH 3,000)</option>
+                                    <option value="2" {{ old('eligible_days', $data['eligible_days'] ?? '') == '2' ? 'selected' : '' }}>2 Days (KSH 6,000)</option>
+                                    <option value="3" {{ old('eligible_days', $data['eligible_days'] ?? '') == '3' ? 'selected' : '' }}>3 Days (KSH 9,000)</option>
+                                </select>
+                                @error('eligible_days')
+                                <div class="text-red-500 mt-1 text-sm">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            @endif
+
+                            @if($data['category'] === 'exhibitor')
+                            <input type="hidden" name="payment_amount" value="30000">
+                            <input type="hidden" name="eligible_days" value="3">
+                            @endif
+
+                            @if($data['category'] === 'presenter')
+                            <input type="hidden" name="eligible_days" value="3">
+                            @endif
                         </div>
                     </div>
                     @endif
                 </div>
                 
                 <div class="mt-8 pt-5 border-t border-gray-200">
+                    <!-- Warning message for existing participant -->
+                    @if(session('warning') && session('existing_participant'))
+                    <div class="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-yellow-800">{{ session('warning') }}</h3>
+                                <div class="mt-2 text-sm text-yellow-700">
+                                    <p>A participant with similar details already exists:</p>
+                                    <ul class="list-disc list-inside mt-1">
+                                        <li>Name: {{ session('existing_participant')['full_name'] }}</li>
+                                        <li>Email: {{ session('existing_participant')['email'] }}</li>
+                                    </ul>
+                                    <p class="mt-2">Please use the Check-In feature instead of registering them again.</p>
+                                    <a href="{{ route('usher.check-in') }}" class="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                                        Go to Check-In
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                     <div class="flex justify-between">
-                        <a href="{{ route('usher.registration.step1') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        <a href="{{ route('usher.registration.step1') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            <svg class="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
                             </svg>
-                            Back to Category
+                            Back
                         </a>
-                        <button type="submit" id="continue-button" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#041E42] hover:bg-[#0A2E5C] focus:outline-none">
-                            Continue to Attendance Days
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 -mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#041E42] hover:bg-[#0A2E5C] focus:outline-none">
+                            Continue to Attendance
+                            <svg class="h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
                         </button>
                     </div>
@@ -312,100 +364,58 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const paymentStatusSelect = document.getElementById('payment_status');
-        const paymentConfirmedCheckbox = document.getElementById('payment_confirmed');
-        const registrationForm = document.getElementById('registration-form');
-        const continueButton = document.getElementById('continue-button');
+        const eligibleDaysSelect = document.getElementById('eligible_days');
+        const presenterTypeSelect = document.getElementById('presenter_type');
         const category = "{{ $data['category'] }}";
-        
-        if (paymentStatusSelect) {
-            paymentStatusSelect.addEventListener('change', function() {
-                // If "Not Paid" is selected, uncheck the payment confirmed checkbox
-                if (this.value === "Not Paid") {
-                    paymentConfirmedCheckbox.checked = false;
+
+        // Handle payment amount updates for general category
+        if (category === 'general' && eligibleDaysSelect) {
+            eligibleDaysSelect.addEventListener('change', function() {
+                const days = parseInt(this.value);
+                let amount = 0;
+                switch(days) {
+                    case 1:
+                        amount = 2500;
+                        break;
+                    case 2:
+                        amount = 4500;
+                        break;
+                    case 3:
+                        amount = 6000;
+                        break;
                 }
+                document.getElementById('payment_amount').value = amount;
             });
         }
-        
-        // Add form submit handler for general category
-        if (category === 'general' && registrationForm) {
-            registrationForm.addEventListener('submit', function(event) {
-                const paymentStatus = paymentStatusSelect.value;
-                const isPaymentConfirmed = paymentConfirmedCheckbox.checked;
-                
-                // If not paid and payment not confirmed, show the payment modal
-                if (paymentStatus === "Not Paid" && !isPaymentConfirmed) {
+
+        // Handle form submission
+        const form = document.getElementById('registration-form');
+        form.addEventListener('submit', function(event) {
+            const paymentStatus = paymentStatusSelect ? paymentStatusSelect.value : null;
+            
+            if (category === 'general') {
+                const eligibleDays = eligibleDaysSelect ? eligibleDaysSelect.value : null;
+                if (!eligibleDays && paymentStatus !== 'Waived') {
                     event.preventDefault();
-                    document.getElementById('payment-modal').classList.remove('hidden');
+                    alert('Please select the number of eligible days.');
+                    return;
                 }
-                // If payment status is empty, don't allow form submission
-                else if (category === 'general' && paymentStatus === "") {
-                    event.preventDefault();
-                    alert("Please select a payment status before continuing.");
-                }
-            });
-        }
-        
-        // M-Pesa payment modal functionality
-        const openMpesaModal = document.getElementById('open-mpesa-modal');
-        const paymentModal = document.getElementById('payment-modal');
-        
-        if (openMpesaModal && paymentModal) {
-            openMpesaModal.addEventListener('click', function(e) {
-                e.preventDefault();
-                paymentModal.classList.remove('hidden');
-            });
-        }
-        
-        function closePaymentModal() {
-            if (paymentModal) {
-                paymentModal.classList.add('hidden');
             }
-        }
-        
-        // Make closePaymentModal globally accessible
-        window.closePaymentModal = closePaymentModal;
-        
-        // Handle M-Pesa transaction code copy
-        const transactionCodeCopy = document.getElementById('copy-transaction-code');
-        if (transactionCodeCopy) {
-            transactionCodeCopy.addEventListener('click', function(e) {
-                e.preventDefault();
-                const code = document.getElementById('mpesa-transaction-code').textContent;
-                
-                // Copy to clipboard
-                navigator.clipboard.writeText(code).then(() => {
-                    transactionCodeCopy.textContent = 'Copied!';
-                    setTimeout(() => {
-                        transactionCodeCopy.textContent = 'Copy';
-                    }, 2000);
-                });
-            });
-        }
-        
-        // Apply M-Pesa payment from modal
-        const applyMpesaBtn = document.getElementById('apply-mpesa-payment');
-        if (applyMpesaBtn) {
-            applyMpesaBtn.addEventListener('click', function() {
-                document.getElementById('payment_status').value = "Paid via M-Pesa";
-                document.getElementById('payment_confirmed').checked = true;
-                
-                const mpesaCode = document.getElementById('mpesa-transaction-code').textContent;
-                const paymentNotes = document.getElementById('payment_notes');
-                paymentNotes.value = "M-Pesa Transaction Code: " + mpesaCode + "\n" + paymentNotes.value;
-                
-                closePaymentModal();
-            });
-        }
-        
-        // Clear M-Pesa payment
-        const clearMpesaBtn = document.getElementById('clear-mpesa-payment');
-        if (clearMpesaBtn) {
-            clearMpesaBtn.addEventListener('click', function() {
-                document.getElementById('payment_status').value = "Not Paid";
-                document.getElementById('payment_confirmed').checked = false;
-                closePaymentModal();
-            });
-        }
+            
+            if (category === 'presenter') {
+                const presenterType = presenterTypeSelect ? presenterTypeSelect.value : null;
+                if (!presenterType) {
+                    event.preventDefault();
+                    alert('Please select the presenter type.');
+                    return;
+                }
+            }
+            
+            if (!paymentStatus) {
+                event.preventDefault();
+                alert('Please select a payment status.');
+            }
+        });
     });
     
     function confirmPayment() {
@@ -431,6 +441,13 @@
         document.getElementById('payment_status').value = "Not Paid";
         closePaymentModal();
         document.getElementById('registration-form').submit();
+    }
+
+    function closePaymentModal() {
+        const paymentModal = document.getElementById('payment-modal');
+        if (paymentModal) {
+            paymentModal.classList.add('hidden');
+        }
     }
 </script>
 @endpush 

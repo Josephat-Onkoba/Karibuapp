@@ -1,77 +1,55 @@
 @extends('layouts.app')
 
-@section('title', 'Registration - Payment')
+@section('title', 'Additional Day Payment Required')
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
     <!-- Header Section -->
     <div class="mb-6">
-        <h1 class="text-2xl md:text-3xl font-bold text-[#041E42]">Registration</h1>
-        <p class="text-gray-600 mt-1">Payment Required</p>
+        <h1 class="text-2xl md:text-3xl font-bold text-[#041E42]">Additional Day Payment Required</h1>
+        <p class="text-gray-600 mt-1">Please process payment for the additional conference day</p>
     </div>
 
     <!-- Payment Information -->
     <div class="max-w-2xl mx-auto">
         <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
             <div class="p-6">
+                <!-- Current Status -->
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-yellow-700">
+                                {{ Session::get('warning') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Payment Amount Information -->
                 <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
-                    <h4 class="font-medium text-gray-700 mb-3">Payment Details for {{ $data['full_name'] }}</h4>
-                    
-                    @php
-                        $amount = 0;
-                        $description = '';
-                        
-                        switch($data['category']) {
-                            case 'exhibitor':
-                                $amount = 30000;
-                                $description = 'Exhibition Fee (Includes full conference period)';
-                                break;
-                            case 'presenter':
-                                switch($data['presenter_type']) {
-                                    case 'non_student':
-                                        $amount = 6000;
-                                        $description = 'Presenter Fee (Non-Student)';
-                                        break;
-                                    case 'student':
-                                        $amount = 4000;
-                                        $description = 'Presenter Fee (Student)';
-                                        break;
-                                    case 'international':
-                                        $amount = 100;
-                                        $description = 'Presenter Fee (International) in USD';
-                                        break;
-                                }
-                                break;
-                            case 'general':
-                                $amount = $data['payment_amount'] ?? 0;
-                                $days = $data['eligible_days'] ?? 1;
-                                $description = "General Participant Fee ({$days} " . Str::plural('day', $days) . ")";
-                                break;
-                        }
-                    @endphp
-                    
+                    <h4 class="font-medium text-gray-700 mb-3">Payment Details</h4>
                     <div class="space-y-2">
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-600">Category:</span>
-                            <span class="font-medium">{{ ucfirst($data['category']) }}</span>
+                            <span class="text-gray-600">Current Paid Days:</span>
+                            <span class="font-medium">{{ session('additional_day_payment.current_days', 0) }} day(s)</span>
                         </div>
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-600">Description:</span>
-                            <span class="font-medium">{{ $description }}</span>
-                        </div>
-                        <div class="flex justify-between items-center text-lg pt-2 border-t border-gray-200 mt-2">
-                            <span class="text-gray-600">Amount Due:</span>
-                            <span class="font-bold text-[#041E42]">
-                                @if(isset($data['presenter_type']) && $data['presenter_type'] === 'international')
+                            <span class="text-gray-600">Additional Day Payment:</span>
+                            <span class="font-medium">
+                                @if(session('participant.presenter_type') === 'international')
                                     <span class="flex items-center">
                                         <span class="text-sm mr-1">USD</span>
-                                        <span>{{ number_format($amount, 2) }}</span>
+                                        <span>{{ number_format(session('additional_day_payment.required_payment', 0), 2) }}</span>
                                     </span>
                                 @else
                                     <span class="flex items-center">
                                         <span class="text-sm mr-1">KES</span>
-                                        <span>{{ number_format($amount, 2) }}</span>
+                                        <span>{{ number_format(session('additional_day_payment.required_payment', 0), 2) }}</span>
                                     </span>
                                 @endif
                             </span>
@@ -82,7 +60,7 @@
                 <!-- Payment Method Tabs -->
                 <div class="border-b border-gray-200 mb-6">
                     <div class="flex space-x-8">
-                        <form action="{{ route('usher.registration.payment') }}" method="GET" class="flex-1">
+                        <form action="{{ route('usher.registration.additional_day_payment') }}" method="GET" class="flex-1">
                             <input type="hidden" name="method" value="mpesa">
                             <button type="submit" 
                                 class="w-full inline-flex items-center justify-center py-3 px-1 border-b-2 font-medium text-sm focus:outline-none {{ request('method', 'mpesa') === 'mpesa' ? 'border-[#041E42] text-[#041E42]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
@@ -91,7 +69,7 @@
                                 M-Pesa Payment
                             </button>
                         </form>
-                        <form action="{{ route('usher.registration.payment') }}" method="GET" class="flex-1">
+                        <form action="{{ route('usher.registration.additional_day_payment') }}" method="GET" class="flex-1">
                             <input type="hidden" name="method" value="vabu">
                             <button type="submit" 
                                 class="w-full inline-flex items-center justify-center py-3 px-1 border-b-2 font-medium text-sm focus:outline-none {{ request('method') === 'vabu' ? 'border-[#041E42] text-[#041E42]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
@@ -99,7 +77,7 @@
                                 <img 
                                     src="{{ asset('images/vabu-logo.png') }}" 
                                     alt="Vabu" 
-                                    class="h-8 w-auto mr-2 {{ request('method') === 'vabu' ? 'brightness-0 invert-[0.13] sepia-[0.82] saturate-[2078] hue-rotate-[201deg] brightness-95 contrast-[1.06]' : 'brightness-0' }}"
+                                    class="h-8 w-auto mr-2 {{ request('method') === 'vabu' ? 'brightness-0 invert-[0.13] sepia-[0.82] saturate-[2078] hue-rotate-[201deg] brightness-95 contrast-[106%]' : 'brightness-0' }}"
                                 >
                                 Vabu Payment
                             </button>
@@ -109,7 +87,7 @@
 
                 @if(request('method', 'mpesa') === 'mpesa')
                 <!-- M-Pesa Payment Form -->
-                <form action="{{ route('usher.registration.process_payment') }}" method="POST" class="space-y-4">
+                <form action="{{ route('usher.registration.process_additional_day_payment') }}" method="POST" class="space-y-4">
                     @csrf
                     <input type="hidden" name="payment_method" value="mpesa">
                     
@@ -122,11 +100,11 @@
                             <li>Enter Account number: <span class="font-medium">2031653161</span></li>
                             <li>Enter Amount: 
                                 <span class="font-medium">
-                                    @if(isset($data['presenter_type']) && $data['presenter_type'] === 'international')
-                                        USD {{ number_format($amount, 2) }}
+                                    @if(session('participant.presenter_type') === 'international')
+                                        USD {{ number_format(session('additional_day_payment.required_payment', 0), 2) }}
                                         <span class="text-sm text-gray-500">(Please convert to KES at current exchange rate)</span>
                                     @else
-                                        KES {{ number_format($amount, 2) }}
+                                        KES {{ number_format(session('additional_day_payment.required_payment', 0), 2) }}
                                     @endif
                                 </span>
                             </li>
@@ -158,27 +136,19 @@
                         ></textarea>
                     </div>
 
-                    <div class="mt-8 pt-5 border-t border-gray-200">
-                        <div class="flex justify-between">
-                            <a href="{{ route('usher.registration.step2') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                </svg>
-                                Back
-                            </a>
-                            <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#041E42] hover:bg-[#0A2E5C] focus:outline-none">
-                                Continue
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 -mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
+                    <div class="mt-6 flex justify-between">
+                        <a href="{{ route('usher.check-in') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#041E42] hover:bg-[#0A2E5C]">
+                            Process Payment
+                        </button>
                     </div>
                 </form>
 
                 @else
                 <!-- Vabu Payment Form -->
-                <form action="{{ route('usher.registration.process_payment') }}" method="POST" class="space-y-4">
+                <form action="{{ route('usher.registration.process_additional_day_payment') }}" method="POST" class="space-y-4">
                     @csrf
                     <input type="hidden" name="payment_method" value="vabu">
                     
@@ -219,21 +189,13 @@
                         ></textarea>
                     </div>
 
-                    <div class="mt-8 pt-5 border-t border-gray-200">
-                        <div class="flex justify-between">
-                            <a href="{{ route('usher.registration.step2') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                </svg>
-                                Back
-                            </a>
-                            <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#041E42] hover:bg-[#0A2E5C] focus:outline-none">
-                                Continue
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 -mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
+                    <div class="mt-6 flex justify-between">
+                        <a href="{{ route('usher.check-in') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#041E42] hover:bg-[#0A2E5C]">
+                            Process Payment
+                        </button>
                     </div>
                 </form>
                 @endif

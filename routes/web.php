@@ -15,6 +15,7 @@ use App\Http\Controllers\Usher\TicketNotificationController as UsherTicketNotifi
 use App\Http\Controllers\Auth\PasswordChangeController;
 use App\Http\Controllers\Usher\TicketController;
 use App\Http\Controllers\Usher\MealController;
+use App\Http\Controllers\Usher\RegistrationController;
 
 // Redirect root to login
 Route::redirect('/', 'login');
@@ -98,6 +99,7 @@ Route::middleware(['auth', 'role:usher', 'first.login'])->prefix('usher')->name(
     Route::post('/registration/step1', [UsherRegisterController::class, 'processStep1'])->name('registration.process_step1');
     Route::get('/registration/step2', [UsherRegisterController::class, 'showStep2'])->name('registration.step2');
     Route::post('/registration/step2', [UsherRegisterController::class, 'processStep2'])->name('registration.process_step2');
+    Route::post('/registration/check-existing', [UsherRegisterController::class, 'checkExistingParticipant'])->name('registration.check-existing');
     
     // Payment form for general category
     Route::get('/registration/payment', [UsherPaymentController::class, 'showPaymentForm'])->name('registration.payment');
@@ -145,4 +147,10 @@ Route::middleware(['auth', 'role:usher', 'first.login'])->prefix('usher')->name(
     // Backend PDF and print routes
     Route::get('/ticket/{id}/download-pdf', [UsherTicketNotificationController::class, 'downloadPdf'])->name('ticket.download-pdf');
     Route::get('/ticket/{id}/print-view', [UsherTicketNotificationController::class, 'printView'])->name('ticket.print-view');
+
+    // Additional Day Payment Routes
+    Route::get('/registration/additional-day-payment', [RegistrationController::class, 'showAdditionalDayPayment'])
+        ->name('registration.additional_day_payment');
+    Route::post('/registration/process-additional-day-payment', [RegistrationController::class, 'processAdditionalDayPayment'])
+        ->name('registration.process_additional_day_payment');
 });

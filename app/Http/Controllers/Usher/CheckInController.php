@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TicketMail;
+use Illuminate\Support\Facades\Session;
 
 class CheckInController extends Controller
 {
@@ -56,134 +57,246 @@ class CheckInController extends Controller
         }
         
         try {
+            $participant = Participant::with(['ticket', 'checkIns'])->find($validated['participant_id']);
+            $conferenceDay = ConferenceDay::find($validated['conference_day_id']);
+            
+            // Check payment eligibility for the day
+            $paymentEligibility = $this->checkPaymentEligibility($participant, $conferenceDay);
+            
+            if (!$paymentEligibility['eligible']) {
+                // Store necessary data in session for payment
+                Session::put('additional_day_payment', [
+                    'participant_id' => $participant->id,
+                    'conference_day_id' => $conferenceDay->id,
+                    'current_days' => $participant->eligible_days,
+                    'required_payment' => $this->calculateRequiredPayment($participant),
+                    'return_to' => $request->get('redirect_to', 'check-in'),
+                    'participant_id_redirect' => $request->get('participant_id_redirect')
+                ]);
+                
+                return redirect()->route('usher.registration.additional_day_payment')
+                    ->with('warning', $paymentEligibility['message']);
+            }
+            
             DB::beginTransaction();
             
-            $participant = Participant::with('tickets')->find($validated['participant_id']);
-            $conferenceDay = ConferenceDay::find($validated['conference_day_id']);
-        
-        // Create the check-in record
-            $checkIn = CheckIn::create([
-            'participant_id' => $validated['participant_id'],
-            'conference_day_id' => $validated['conference_day_id'],
-            'checked_by_user_id' => Auth::id(),
-            'checked_in_at' => now(),
-            'notes' => $validated['notes'] ?? null
-        ]);
-        
-            // Get the existing active ticket
-            $activeTicket = Ticket::where('participant_id', $participant->id)
-                          ->where('active', true)
-                          ->first();
+            // Get or create appropriate ticket
+            $ticket = $this->getOrCreateTicket($participant, $conferenceDay);
             
-            // Based on conference day, get the field to check
-            $dayField = 'day' . $conferenceDay->id . '_valid';
-            
-            // Check if we need to create a new ticket:
-            // 1. If no active ticket exists
-            // 2. If active ticket exists but is not valid for the current day
-            // 3. If active ticket exists but has expired
-            $needNewTicket = !$activeTicket || !$activeTicket->$dayField || $activeTicket->isExpired();
-            
-            if ($needNewTicket) {
-                // If there's an existing active ticket, mark it as inactive
-                if ($activeTicket) {
-                    $activeTicket->active = false;
-                    $activeTicket->save();
-                    
-                    Log::info('Existing ticket marked inactive as not valid for day ' . $conferenceDay->id . ' or expired', [
-                        'participant_id' => $participant->id,
-                        'old_ticket_number' => $activeTicket->ticket_number,
-                        'day' => $conferenceDay->id,
-                        'was_expired' => $activeTicket->isExpired(),
-                        'day_valid' => $activeTicket->$dayField
-                    ]);
-                }
-                
-                // Create a new ticket valid only for the current check-in day
-                $newTicket = new Ticket();
-                $newTicket->ticket_number = Ticket::generateTicketNumber();
-                $newTicket->participant_id = $participant->id;
-                $newTicket->registered_by_user_id = Auth::id();
-                
-                // Set all day fields to false by default
-                $newTicket->day1_valid = false;
-                $newTicket->day2_valid = false;
-                $newTicket->day3_valid = false;
-                
-                // Set the current day to true
-                $newTicket->$dayField = true;
-                
-                $newTicket->active = true;
-                
-                // Calculate and set expiration date (10:00 PM EAT on the check-in day)
-                $newTicket->expiration_date = Ticket::calculateExpirationDate(
-                    $newTicket->day1_valid,
-                    $newTicket->day2_valid,
-                    $newTicket->day3_valid
-                );
-                
-                $newTicket->save();
-                
-                // Use this new ticket for notifications
-                $ticket = $newTicket;
-                
-                Log::info('New day-specific ticket generated on check-in for day ' . $conferenceDay->id, [
-                    'participant_id' => $participant->id,
-                    'ticket_number' => $ticket->ticket_number,
-                    'day' => $conferenceDay->id,
-                    'expiration_date' => $ticket->expiration_date
-                ]);
-            } else {
-                $ticket = $activeTicket;
-                Log::info('Using existing ticket for check-in on day ' . $conferenceDay->id, [
-                    'participant_id' => $participant->id,
-                    'ticket_number' => $ticket->ticket_number,
-                    'day' => $conferenceDay->id
-                ]);
-            }
+            // Create the check-in record
+            CheckIn::create([
+                'participant_id' => $validated['participant_id'],
+                'conference_day_id' => $validated['conference_day_id'],
+                'checked_by_user_id' => Auth::id(),
+                'checked_in_at' => now(),
+                'notes' => $validated['notes'] ?? null
+            ]);
             
             DB::commit();
-        
-        // Send ticket notifications (email and SMS)
-        try {
-                // Send the ticket via email directly
-                Mail::to($participant->email)->send(new TicketMail($ticket));
-                
-                Log::info('Ticket email sent automatically after check-in', [
-                    'participant_id' => $participant->id,
-                    'email' => $participant->email,
-                    'ticket_number' => $ticket->ticket_number
-                ]);
-        } catch (\Exception $e) {
-            // Log the error but don't fail the check-in process
-            Log::error('Failed to send ticket notifications', [
-                'participant_id' => $participant->id,
-                'error' => $e->getMessage()
-            ]);
-        }
-        
-        // Determine where to redirect based on the redirect_to parameter
-            if (isset($validated['redirect_to'])) {
-                if ($validated['redirect_to'] === 'my-registrations') {
-            return redirect()->route('usher.my-registrations')
-                        ->with('success', "{$participant->full_name} has been checked in successfully for day {$conferenceDay->id}.");
-                } elseif ($validated['redirect_to'] === 'participant_view' && isset($validated['participant_id_redirect'])) {
-                    return redirect()->route('usher.participant.view', $validated['participant_id_redirect'])
-                        ->with('success', "{$participant->full_name} has been checked in successfully for day {$conferenceDay->id}.");
-                }
+            
+            // Handle redirect based on source
+            $redirectRoute = match($request->get('redirect_to')) {
+                'my-registrations' => 'usher.registration.my-registrations',
+                'participant_view' => 'usher.participant.view',
+                default => 'usher.check-in'
+            };
+            
+            if ($request->get('redirect_to') === 'participant_view' && $request->get('participant_id_redirect')) {
+                return redirect()->route($redirectRoute, $request->get('participant_id_redirect'))
+                    ->with('success', 'Participant checked in successfully.');
             }
             
-            return redirect()->back()
-                ->with('success', "{$participant->full_name} has been checked in successfully for day {$conferenceDay->id}.");
+            return redirect()->route($redirectRoute)
+                ->with('success', 'Participant checked in successfully.');
                 
         } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('Check-in failed', [
-                'participant_id' => $validated['participant_id'],
-                'error' => $e->getMessage()
+            DB::rollBack();
+            Log::error('Check-in failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Failed to check in participant. ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Check payment eligibility for a specific day
+     */
+    private function checkPaymentEligibility(Participant $participant, ConferenceDay $conferenceDay): array
+    {
+        // If participant category doesn't require payment
+        if (in_array($participant->category, ['invited', 'internal', 'coordinators'])) {
+            return ['eligible' => true, 'message' => null];
+        }
+        
+        // For general participants, check if they've paid for enough days
+        if ($participant->category === 'general') {
+            $paidDays = $participant->eligible_days ?? 0;
+            
+            // Get check-in history
+            $checkInHistory = $participant->checkIns()
+                ->orderBy('conference_day_id')
+                ->pluck('conference_day_id')
+                ->toArray();
+            
+            // Add current day to sequence for validation
+            $checkInSequence = array_merge($checkInHistory, [$conferenceDay->id]);
+            sort($checkInSequence);
+            
+            // Check if this is a consecutive day
+            $isConsecutiveDay = empty($checkInHistory) || 
+                (end($checkInHistory) + 1 === $conferenceDay->id);
+            
+            // Count used days
+            $usedDays = count($checkInHistory);
+            
+            // If they've used all their paid days
+            if ($usedDays >= $paidDays) {
+                return [
+                    'eligible' => false,
+                    'message' => "Participant has only paid for {$paidDays} day(s) and has already used {$usedDays} day(s). Additional payment required for day {$conferenceDay->id}."
+                ];
+            }
+            
+            // If trying to attend a non-consecutive day
+            if (!$isConsecutiveDay && !empty($checkInHistory)) {
+                $lastAttendedDay = end($checkInHistory);
+                return [
+                    'eligible' => false,
+                    'message' => "Non-consecutive day attendance detected. Last attended day {$lastAttendedDay}. Payment required for day {$conferenceDay->id}."
+                ];
+            }
+        }
+        
+        // For exhibitors and presenters, they should have full conference access
+        if (in_array($participant->category, ['exhibitor', 'presenter']) && $participant->payment_confirmed) {
+            return ['eligible' => true, 'message' => null];
+        }
+        
+        // If payment is not confirmed
+        if (!$participant->payment_confirmed) {
+            return [
+                'eligible' => false,
+                'message' => 'Payment not confirmed. Please process payment before check-in.'
+            ];
+        }
+        
+        return ['eligible' => true, 'message' => null];
+    }
+    
+    /**
+     * Calculate required payment for additional day
+     */
+    private function calculateRequiredPayment(Participant $participant): float
+    {
+        // Base payment for one day
+        return match($participant->category) {
+            'general' => 3000.00, // One day rate for general participants
+            'exhibitor' => 30000.00,
+            'presenter' => match($participant->presenter_type) {
+                'student' => 4000.00,
+                'non_student' => 6000.00,
+                'international' => 100.00, // USD
+                default => 6000.00
+            },
+            default => 0.00
+        };
+    }
+    
+    /**
+     * Get existing valid ticket or create new one
+     */
+    private function getOrCreateTicket(Participant $participant, ConferenceDay $conferenceDay): Ticket
+    {
+        // Get the existing active ticket
+        $activeTicket = Ticket::where('participant_id', $participant->id)
+                      ->where('active', true)
+                      ->first();
+        
+        // Based on conference day, get the field to check
+        $dayField = 'day' . $conferenceDay->id . '_valid';
+        
+        // Get participant's check-in history
+        $checkInHistory = CheckIn::where('participant_id', $participant->id)
+            ->orderBy('conference_day_id')
+            ->pluck('conference_day_id')
+            ->toArray();
+            
+        // Add current day to history for validation
+        $checkInSequence = array_merge($checkInHistory, [$conferenceDay->id]);
+        sort($checkInSequence);
+        
+        // Check if this is a consecutive day check-in
+        $isConsecutiveDay = empty($checkInHistory) || 
+            (end($checkInHistory) + 1 === $conferenceDay->id);
+            
+        // Determine if we need a new ticket
+        $needNewTicket = false;
+        
+        if (!$activeTicket) {
+            // No active ticket exists
+            $needNewTicket = true;
+        } elseif (!$isConsecutiveDay) {
+            // Non-consecutive day attendance requires new ticket
+            $needNewTicket = true;
+        } elseif ($activeTicket->isExpired()) {
+            // Expired ticket needs replacement
+            $needNewTicket = true;
+        }
+        
+        if ($needNewTicket) {
+            // If there's an existing active ticket, mark it as inactive
+            if ($activeTicket) {
+                $activeTicket->active = false;
+                $activeTicket->save();
+                
+                Log::info('Existing ticket marked inactive', [
+                    'participant_id' => $participant->id,
+                    'old_ticket_number' => $activeTicket->ticket_number,
+                    'reason' => $isConsecutiveDay ? 'expired' : 'non_consecutive_day'
+                ]);
+            }
+            
+            // Create a new ticket
+            $newTicket = new Ticket();
+            $newTicket->ticket_number = Ticket::generateTicketNumber();
+            $newTicket->participant_id = $participant->id;
+            $newTicket->registered_by_user_id = Auth::id();
+            
+            // Set all day fields to false by default
+            $newTicket->day1_valid = false;
+            $newTicket->day2_valid = false;
+            $newTicket->day3_valid = false;
+            
+            // Set the current day as valid
+            $newTicket->$dayField = true;
+            $newTicket->active = true;
+            
+            // Calculate expiration date based on consecutive days
+            $newTicket->expiration_date = now()->endOfDay();
+            
+            $newTicket->save();
+            
+            Log::info('New ticket generated', [
+                'participant_id' => $participant->id,
+                'ticket_number' => $newTicket->ticket_number,
+                'conference_day' => $conferenceDay->id,
+                'is_consecutive' => $isConsecutiveDay,
+                'check_in_sequence' => $checkInSequence
             ]);
             
-            return redirect()->back()->with('error', 'Check-in failed: ' . $e->getMessage());
+            return $newTicket;
+        } else {
+            // Update existing ticket for consecutive day
+            $activeTicket->$dayField = true;
+            $activeTicket->save();
+            
+            Log::info('Using existing ticket for consecutive day', [
+                'participant_id' => $participant->id,
+                'ticket_number' => $activeTicket->ticket_number,
+                'conference_day' => $conferenceDay->id,
+                'check_in_sequence' => $checkInSequence
+            ]);
+            
+            return $activeTicket;
         }
     }
     

@@ -7,10 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Notifications\Notifiable;
 
 class Participant extends Model
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
+    
+    // Payment amount constants
+    const EXHIBITOR_FEE = 30000.00;
+    const PRESENTER_NON_STUDENT_FEE = 6000.00;
+    const PRESENTER_STUDENT_FEE = 4000.00;
+    const PRESENTER_INTERNATIONAL_FEE = 100.00; // USD
     
     /**
      * The attributes that are mass assignable.
@@ -27,8 +34,11 @@ class Participant extends Model
         'staff_number',
         'role',
         'category',
+        'presenter_type',
         'payment_status',
         'payment_confirmed',
+        'payment_amount',
+        'eligible_days',
         'registered_by_user_id'
     ];
     
@@ -41,6 +51,8 @@ class Participant extends Model
     {
         return [
             'payment_confirmed' => 'boolean',
+            'payment_amount' => 'decimal:2',
+            'eligible_days' => 'integer',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
@@ -80,7 +92,7 @@ class Participant extends Model
      */
     public function tickets(): HasMany
     {
-        return $this->hasMany(Ticket::class)->orderBy('created_at', 'desc');
+        return $this->hasMany(Ticket::class);
     }
     
     /**
@@ -89,6 +101,48 @@ class Participant extends Model
     public function registeredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registered_by_user_id');
+    }
+    
+    /**
+     * Get the required payment amount based on category and type.
+     *
+     * @return float|null
+     */
+    public function getRequiredPaymentAmount(): ?float
+    {
+        switch ($this->category) {
+            case 'exhibitor':
+                return self::EXHIBITOR_FEE;
+            case 'presenter':
+                switch ($this->presenter_type) {
+                    case 'non_student':
+                        return self::PRESENTER_NON_STUDENT_FEE;
+                    case 'student':
+                        return self::PRESENTER_STUDENT_FEE;
+                    case 'international':
+                        return self::PRESENTER_INTERNATIONAL_FEE;
+                    default:
+                        return null;
+                }
+            default:
+                return null;
+        }
+    }
+    
+    /**
+     * Get the eligible days based on category.
+     *
+     * @return int|null
+     */
+    public function getDefaultEligibleDays(): ?int
+    {
+        switch ($this->category) {
+            case 'exhibitor':
+            case 'presenter':
+                return 3; // Full conference period
+            default:
+                return null;
+        }
     }
     
     /**
@@ -112,5 +166,16 @@ class Participant extends Model
             ->where('meal_type_id', $mealTypeId)
             ->where('conference_day_id', $conferenceDayId)
             ->exists();
+    }
+
+    /**
+     * Route notifications for the TalkSasa channel.
+     *
+     * @param  \Illuminate\Notifications\Notification  $notification
+     * @return string
+     */
+    public function routeNotificationForTalkSasa($notification)
+    {
+        return $this->phone_number;
     }
 } 
