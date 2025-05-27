@@ -325,10 +325,10 @@
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center border border-blue-200 text-blue-500 font-bold">
-                                            {{ strtoupper(substr($checkIn->participant->name ?? 'U', 0, 1)) }}
+                                            {{ strtoupper(substr($checkIn->participant->full_name ?? 'U', 0, 1)) }}
                                         </div>
                                         <div class="ml-3">
-                                            <div class="text-sm font-medium text-gray-900">{{ $checkIn->participant->name ?? 'Unknown' }}</div>
+                                            <div class="text-sm font-medium text-gray-900">{{ $checkIn->participant->full_name ?? 'Unknown' }}</div>
                                             <div class="text-xs text-gray-500">{{ $checkIn->participant->email ?? 'No email' }}</div>
                                         </div>
                                     </div>
