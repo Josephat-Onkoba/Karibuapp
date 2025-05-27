@@ -63,8 +63,8 @@
                             <span>Check-In</span>
                         </a>
                         
-                        <a href="{{ route('usher.my-registrations') }}" 
-                           class="flex items-center px-3 py-2 text-sm font-medium {{ request()->routeIs('usher.my-registrations') ? 'text-white border-b-2 border-white' : 'text-gray-300 hover:text-white hover:border-b-2 hover:border-gray-300' }} relative">
+                        <a href="{{ route('usher.registration.my-registrations') }}" 
+                           class="flex items-center px-3 py-2 text-sm font-medium {{ request()->routeIs('usher.registration.my-registrations') ? 'text-white border-b-2 border-white' : 'text-gray-300 hover:text-white hover:border-b-2 hover:border-gray-300' }} relative">
                             <i data-lucide="list" class="h-5 w-5 mr-1"></i>
                             <span>My Registrations</span>
                             @if(isset($globalPendingCheckIns) && $globalPendingCheckIns > 0)
@@ -157,8 +157,8 @@
                     <span>Check-In</span>
                 </a>
                 
-                <a href="{{ route('usher.my-registrations') }}" 
-                   class="flex items-center px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('usher.my-registrations') ? 'bg-[#0A2E5C] text-white' : 'text-gray-300 hover:bg-[#0A2E5C] hover:text-white' }} relative">
+                <a href="{{ route('usher.registration.my-registrations') }}" 
+                   class="flex items-center px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('usher.registration.my-registrations') ? 'bg-[#0A2E5C] text-white' : 'text-gray-300 hover:bg-[#0A2E5C] hover:text-white' }} relative">
                     <i data-lucide="list" class="h-5 w-5 mr-2"></i>
                     <span>My Registrations</span>
                     @if(isset($globalPendingCheckIns) && $globalPendingCheckIns > 0)

@@ -117,7 +117,7 @@ Route::middleware(['auth', 'role:usher', 'first.login'])->prefix('usher')->name(
     Route::post('/registration', [UsherRegisterController::class, 'store'])->name('registration.store');
     
     Route::get('/registration/ticket/{ticket}', [UsherRegisterController::class, 'showTicket'])->name('registration.ticket');
-    Route::get('/my-registrations', [UsherRegisterController::class, 'myRegistrations'])->name('my-registrations');
+    Route::get('/my-registrations', [UsherRegisterController::class, 'myRegistrations'])->name('registration.my-registrations');
     
     // Check-in routes
     Route::get('/check-in', [UsherCheckInController::class, 'index'])->name('check-in');

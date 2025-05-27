@@ -239,7 +239,7 @@
                                     @endphp
                                     
                                     @if($canCheckIn)
-                                    <form action="{{ route('usher.check-in.process') }}" method="POST">
+                                     <form action="{{ route('usher.check-in.process') }}" method="POST">
                                         @csrf
                                         <input type="hidden" name="participant_id" value="{{ $participant->id }}">
                                         <input type="hidden" name="conference_day_id" value="{{ $today->id }}">

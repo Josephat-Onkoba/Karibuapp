@@ -97,12 +97,20 @@ class CheckInController extends Controller
             // Handle redirect based on source
             $redirectRoute = match($request->get('redirect_to')) {
                 'my-registrations' => 'usher.registration.my-registrations',
-                'participant_view' => 'usher.participant.view',
+                'registration.my-registrations' => 'usher.registration.my-registrations',
+                'participant_view' => 'usher.participant.view', // Correct route name as per web.php
                 default => 'usher.check-in'
             };
             
+            // Log the redirect information for debugging
+            Log::info('Check-in redirect', [
+                'redirect_to' => $request->get('redirect_to'),
+                'resolved_route' => $redirectRoute
+            ]);
+            
             if ($request->get('redirect_to') === 'participant_view' && $request->get('participant_id_redirect')) {
-                return redirect()->route($redirectRoute, $request->get('participant_id_redirect'))
+                // Use the id parameter name as per the route definition
+                return redirect()->route($redirectRoute, ['id' => $request->get('participant_id_redirect')])
                     ->with('success', 'Participant checked in successfully.');
             }
             

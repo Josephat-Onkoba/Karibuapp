@@ -6,7 +6,7 @@
 <div class="container mx-auto px-4 py-6">
     <!-- Back Button -->
     <div class="mb-6">
-        <a href="{{ route('usher.my-registrations') }}" class="inline-flex items-center text-gray-600 hover:text-gray-900">
+        <a href="{{ route('usher.registration.my-registrations') }}" class="inline-flex items-center text-gray-600 hover:text-gray-900">
             <i data-lucide="arrow-left" class="h-4 w-4 mr-1"></i>
             Back to My Registrations
         </a>

@@ -33,6 +33,26 @@
     <!-- Form Section -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
         <div class="p-6">
+            @if(session('duplicate_warning'))
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700"><strong>Warning:</strong> A participant with the same name or email already exists.</p>
+                        @if(session('duplicate_participant.has_active_ticket'))
+                            <p class="text-sm text-yellow-700 mt-1">This participant already has an active ticket. You may be creating a duplicate registration.</p>
+                        @endif
+                        <div class="mt-2">
+                            <a href="{{ url('usher/participant') }}/{{ session('duplicate_participant.id') }}/view" target="_blank" class="text-sm text-yellow-700 font-medium underline hover:text-yellow-600">View Existing Participant</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
             <form action="{{ route('usher.registration.process_step2') }}" method="POST" id="registration-form">
                 @csrf
                 
@@ -246,6 +266,34 @@
                         </div>
                             @endif
 
+                            <!-- Payment Confirmation -->
+                            <div class="md:col-span-2 mt-2">
+                                <div class="flex items-start">
+                                    <div class="flex items-center h-5">
+                                        <input
+                                            type="checkbox"
+                                            name="payment_confirmed"
+                                            id="payment_confirmed"
+                                            class="h-4 w-4 text-[#041E42] border-gray-300 rounded focus:ring-[#041E42]"
+                                            {{ old('payment_confirmed', $data['payment_confirmed'] ?? '') ? 'checked' : '' }}
+                                            onchange="handlePaymentConfirmation(this)"
+                                        >
+                                    </div>
+                                    <div class="ml-3">
+                                        <label for="payment_confirmed" class="text-gray-700 font-semibold">Payment Confirmed</label>
+                                        <p class="text-gray-500 text-sm">Check this box if payment has been confirmed (required for "Paid" options)</p>
+                                    </div>
+                                </div>
+                                @error('payment_confirmed')
+                                <p class="text-red-500 mt-1 text-sm">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            
+                            <!-- Hidden inputs -->
+                            <input type="hidden" name="registered_by_user_id" value="{{ Auth::id() }}">
+                            <input type="hidden" name="transaction_code" id="transaction_code" value="{{ old('transaction_code', $data['transaction_code'] ?? '') }}">
+                            <input type="hidden" name="payment_notes" id="payment_notes" value="{{ old('payment_notes', $data['payment_notes'] ?? '') }}">
+                            
                             <!-- Hidden inputs for Exhibitor -->
                             @if($data['category'] === 'exhibitor')
                             <input type="hidden" name="payment_amount" value="30000">
@@ -347,6 +395,223 @@
         const paymentStatusSelect = document.getElementById('payment_status');
         const eligibleDaysSelect = document.getElementById('eligible_days');
         const presenterTypeSelect = document.getElementById('presenter_type');
+        const paymentConfirmedCheckbox = document.getElementById('payment_confirmed');
+        const emailField = document.getElementById('email');
+        const fullNameField = document.getElementById('full_name');
+        
+        // Add duplicate participant check functionality
+        let typingTimer;
+        const doneTypingInterval = 800; // ms
+        
+        // Set up input event listeners for duplicate checks
+        if (emailField) {
+            emailField.addEventListener('input', function() {
+                clearTimeout(typingTimer);
+                if (emailField.value) {
+                    typingTimer = setTimeout(checkExistingParticipant, doneTypingInterval);
+                }
+            });
+        }
+        
+        if (fullNameField) {
+            fullNameField.addEventListener('input', function() {
+                clearTimeout(typingTimer);
+                if (fullNameField.value) {
+                    typingTimer = setTimeout(checkExistingParticipant, doneTypingInterval);
+                }
+            });
+        }
+        
+        // Function to check for existing participants
+        function checkExistingParticipant() {
+            const email = emailField.value.trim();
+            const fullName = fullNameField.value.trim();
+            
+            if (!email || !fullName) return; // Don't check if either field is empty
+            
+            console.log('Checking for existing participant:', { email, fullName });
+            
+            // Show loading indicator
+            if (!document.getElementById('duplicate-check-loading')) {
+                const loadingEl = document.createElement('div');
+                loadingEl.id = 'duplicate-check-loading';
+                loadingEl.className = 'text-gray-500 text-sm mt-2';
+                loadingEl.innerHTML = 'Checking for existing participants...';
+                fullNameField.parentNode.appendChild(loadingEl);
+            }
+            
+            // Clear any existing warning
+            const existingWarning = document.getElementById('duplicate-participant-warning');
+            if (existingWarning) {
+                existingWarning.remove();
+            }
+            
+            // Create form data with proper content type
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('full_name', fullName);
+            formData.append('_token', '{{ csrf_token() }}');
+            
+            // Convert form data to URL-encoded format - this is important for Laravel
+            const urlEncodedData = new URLSearchParams(formData).toString();
+            
+            // Call the check-existing endpoint
+            fetch('{{ route("usher.registration.check-existing") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest', // Important for Laravel to recognize as AJAX
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: urlEncodedData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                
+                // Remove loading indicator
+                const loadingEl = document.getElementById('duplicate-check-loading');
+                if (loadingEl) {
+                    loadingEl.remove();
+                }
+                
+                // Display warning if participant exists
+                if (data.exists) {
+                    // Create warning element
+                    const warningEl = document.createElement('div');
+                    warningEl.id = 'duplicate-participant-warning';
+                    warningEl.className = 'bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-4 mb-4 rounded';
+                    
+                    let warningHTML = `
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700"><strong>Warning:</strong> A participant with the same name or email already exists.</p>
+                    `;
+                    
+                    if (data.participant && data.participant.has_active_ticket) {
+                        warningHTML += `<p class="text-sm text-yellow-700 mt-1">This participant already has an active ticket. You may be creating a duplicate registration.</p>`;
+                    }
+                    
+                    warningHTML += `
+                                <div class="mt-2">
+                                    <button type="button" onclick="viewExistingParticipant(${data.participant.id})" class="text-sm text-yellow-700 font-medium underline hover:text-yellow-600">View Existing Participant</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    warningEl.innerHTML = warningHTML;
+                    
+                    // Insert the warning after the full name field
+                    const formGroup = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.gap-6');
+                    if (formGroup) {
+                        formGroup.after(warningEl);
+                    } else {
+                        // Fallback insertion
+                        fullNameField.parentNode.appendChild(warningEl);
+                    }
+                    
+                    // Highlight the fields to make the warning more noticeable
+                    fullNameField.classList.add('border-yellow-400');
+                    emailField.classList.add('border-yellow-400');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking for existing participant:', error);
+                
+                // Remove loading indicator on error
+                const loadingEl = document.getElementById('duplicate-check-loading');
+                if (loadingEl) {
+                    loadingEl.remove();
+                }
+                
+                // Show error message to user
+                const errorEl = document.createElement('div');
+                errorEl.id = 'duplicate-check-error';
+                errorEl.className = 'bg-red-50 border-l-4 border-red-400 p-4 mt-4 rounded';
+                errorEl.innerHTML = `
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">Error checking for duplicate participants. You may continue with registration.</p>
+                        </div>
+                    </div>
+                `;
+                fullNameField.parentNode.appendChild(errorEl);
+                
+                // Remove error message after 5 seconds
+                setTimeout(() => {
+                    const errorEl = document.getElementById('duplicate-check-error');
+                    if (errorEl) {
+                        errorEl.remove();
+                    }
+                }, 5000);
+            });
+        }
+        
+        // Set initial payment confirmation status based on payment status
+        if (paymentStatusSelect) {
+            updatePaymentConfirmation(paymentStatusSelect.value);
+            
+            // Update payment confirmation when payment status changes
+            paymentStatusSelect.addEventListener('change', function() {
+                updatePaymentConfirmation(this.value);
+            });
+        }
+        // Function to update payment confirmation checkbox based on payment status
+        function updatePaymentConfirmation(status) {
+            if (paymentConfirmedCheckbox) {
+                if (status === 'Paid via Vabu' || status === 'Paid via M-Pesa' || status === 'Waived') {
+                    paymentConfirmedCheckbox.checked = true;
+                    paymentConfirmedCheckbox.disabled = true; // Lock it when payment is confirmed
+                    
+                    // For waived status, always set payment_confirmed to true
+                    if (status === 'Waived') {
+                        // Waived payments are automatically confirmed
+                        const hiddenPaymentConfirmed = document.createElement('input');
+                        hiddenPaymentConfirmed.type = 'hidden';
+                        hiddenPaymentConfirmed.name = 'payment_confirmed';
+                        hiddenPaymentConfirmed.value = '1';
+                        
+                        // Replace any existing hidden field
+                        const existingHidden = document.querySelector('input[type="hidden"][name="payment_confirmed"]');
+                        if (existingHidden) {
+                            existingHidden.remove();
+                        }
+                        
+                        document.getElementById('registration-form').appendChild(hiddenPaymentConfirmed);
+                    }
+                } else {
+                    paymentConfirmedCheckbox.checked = false;
+                    paymentConfirmedCheckbox.disabled = false;
+                }
+            }
+        }
+        
+        // Make handlePaymentConfirmation available globally
+        window.handlePaymentConfirmation = function(checkbox) {
+            const paymentStatus = paymentStatusSelect ? paymentStatusSelect.value : '';
+            
+            // If payment is marked as paid but confirmation is unchecked, show warning
+            if (!checkbox.checked && (paymentStatus === 'Paid via Vabu' || paymentStatus === 'Paid via M-Pesa')) {
+                alert('Warning: You have selected a paid payment status but have not confirmed the payment.');
+            }
+        };
+        
         const category = "{{ $data['category'] }}";
         
         // Handle payment amount updates for general category
@@ -410,7 +675,15 @@
         // Set payment status to "Paid via M-Pesa" and add transaction code to notes
         document.getElementById('payment_status').value = "Paid via M-Pesa";
         document.getElementById('payment_confirmed').checked = true;
-        document.getElementById('payment_notes').value += `\nM-Pesa Transaction: ${mpesaCode}`;
+        
+        // Set the transaction code in the hidden field
+        document.getElementById('transaction_code').value = mpesaCode;
+        
+        // Add the transaction code to notes as well
+        const notesField = document.getElementById('payment_notes');
+        if (notesField) {
+            notesField.value += `\nM-Pesa Transaction: ${mpesaCode}`;
+        }
         
         // Close modal and submit form
         closePaymentModal();
@@ -422,6 +695,11 @@
         document.getElementById('payment_status').value = "Not Paid";
         closePaymentModal();
         document.getElementById('registration-form').submit();
+    }
+    
+    // Function to view existing participant
+    function viewExistingParticipant(participantId) {
+        window.open(`{{ url('usher/participant') }}/${participantId}/view`, '_blank');
     }
 
     function closePaymentModal() {

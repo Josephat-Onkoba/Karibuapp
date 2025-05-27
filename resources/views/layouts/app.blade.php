@@ -62,6 +62,9 @@
         </div>
     </footer>
 
+    <!-- Alpine.js - for x-data attributes -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
@@ -96,7 +99,15 @@
                     }
                 }, { passive: true });
             }
+            
+            // Re-initialize Lucide icons after DOM updates
+            setTimeout(function() {
+                lucide.createIcons();
+            }, 500);
         });
     </script>
+    
+    <!-- Additional scripts from child views -->
+    @stack('scripts')
 </body>
 </html>

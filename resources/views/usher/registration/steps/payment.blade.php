@@ -22,23 +22,29 @@
                         $amount = 0;
                         $description = '';
                         
+                        // Use constants from Participant model if available
+                        $exhibitorFee = \App\Models\Participant::EXHIBITOR_FEE ?? 30000;
+                        $presenterNonStudentFee = \App\Models\Participant::PRESENTER_NON_STUDENT_FEE ?? 6000;
+                        $presenterStudentFee = \App\Models\Participant::PRESENTER_STUDENT_FEE ?? 4000;
+                        $presenterInternationalFee = \App\Models\Participant::PRESENTER_INTERNATIONAL_FEE ?? 100;
+                        
                         switch($data['category']) {
                             case 'exhibitor':
-                                $amount = 30000;
+                                $amount = $exhibitorFee;
                                 $description = 'Exhibition Fee (Includes full conference period)';
                                 break;
                             case 'presenter':
                                 switch($data['presenter_type']) {
                                     case 'non_student':
-                                        $amount = 6000;
+                                        $amount = $presenterNonStudentFee;
                                         $description = 'Presenter Fee (Non-Student)';
                                         break;
                                     case 'student':
-                                        $amount = 4000;
+                                        $amount = $presenterStudentFee;
                                         $description = 'Presenter Fee (Student)';
                                         break;
                                     case 'international':
-                                        $amount = 100;
+                                        $amount = $presenterInternationalFee;
                                         $description = 'Presenter Fee (International) in USD';
                                         break;
                                 }
@@ -48,6 +54,12 @@
                                 $days = $data['eligible_days'] ?? 1;
                                 $description = "General Participant Fee ({$days} " . Str::plural('day', $days) . ")";
                                 break;
+                        }
+                        
+                        // Ensure we have a payment amount for the session
+                        if (!isset($data['payment_amount'])) {
+                            $data['payment_amount'] = $amount;
+                            session(['registration_data' => $data]);
                         }
                     @endphp
                     
@@ -112,6 +124,12 @@
                 <form action="{{ route('usher.registration.process_payment') }}" method="POST" class="space-y-4">
                 @csrf
                     <input type="hidden" name="payment_method" value="mpesa">
+                    <input type="hidden" name="payment_confirmed" value="1">
+                    <input type="hidden" name="processed_by_user_id" value="{{ Auth::id() }}">
+                    <input type="hidden" name="payment_amount" value="{{ $amount }}">
+                    @if(isset($data['participant_id']))
+                    <input type="hidden" name="participant_id" value="{{ $data['participant_id'] }}">
+                    @endif
                     
                     <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
                         <h4 class="font-medium text-gray-700 mb-3">M-Pesa Payment Instructions</h4>
@@ -135,17 +153,14 @@
                         </ol>
                     </div>
 
-                    <div>
-                        <label for="mpesa_code" class="block text-gray-700 font-medium mb-2 text-sm">M-Pesa Transaction Code <span class="text-red-500">*</span></label>
-                        <input 
-                            type="text" 
-                            name="mpesa_code" 
-                            id="mpesa_code" 
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42] text-sm"
-                            placeholder="Enter M-Pesa transaction code"
-                            required
-                        >
-                                </div>
+                    <div class="mb-4">
+                        <label for="transaction_code" class="block text-sm font-medium text-gray-700 mb-1">M-Pesa Transaction Code <span class="text-gray-500 text-xs">(Optional)</span></label>
+                        <input type="text" name="transaction_code" id="transaction_code" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 @error('transaction_code') border-red-500 @enderror" placeholder="e.g. QJI7PDR9HS" value="{{ old('transaction_code') }}">
+                        <p class="text-gray-500 text-xs mt-1">You can leave this blank and add it later if needed.</p>
+                        @error('transaction_code')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
 
                     <div>
                         <label for="payment_notes" class="block text-gray-700 font-medium mb-2 text-sm">Additional Notes</label>
@@ -156,7 +171,27 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42] text-sm"
                             placeholder="Any additional payment information"
                         ></textarea>
-                                </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="flex items-start space-x-2">
+                            <input 
+                                type="checkbox" 
+                                name="payment_confirmed" 
+                                id="payment_confirmed" 
+                                class="h-5 w-5 mt-1 text-[#041E42] focus:ring-[#041E42] border-gray-300 rounded"
+                                checked
+                                required
+                            >
+                            <label for="payment_confirmed" class="block text-gray-700 font-medium text-base">
+                                <span class="block font-semibold">I confirm this payment information is correct</span>
+                                <span class="block text-sm text-gray-500 mt-1">This will mark the payment as confirmed in the system</span>
+                            </label>
+                        </div>
+                        @error('payment_confirmed')
+                        <p class="text-red-500 mt-1 text-sm">{{ $message }}</p>
+                        @enderror
+                    </div>
 
                     <div class="mt-8 pt-5 border-t border-gray-200">
                         <div class="flex justify-between">
@@ -181,6 +216,12 @@
                 <form action="{{ route('usher.registration.process_payment') }}" method="POST" class="space-y-4">
                     @csrf
                     <input type="hidden" name="payment_method" value="vabu">
+                    <input type="hidden" name="payment_confirmed" value="1">
+                    <input type="hidden" name="processed_by_user_id" value="{{ Auth::id() }}">
+                    <input type="hidden" name="payment_amount" value="{{ $amount }}">
+                    @if(isset($data['participant_id']))
+                    <input type="hidden" name="participant_id" value="{{ $data['participant_id'] }}">
+                    @endif
                     
                     <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
                         <h4 class="font-medium text-gray-700 mb-3">Vabu Payment Instructions</h4>
@@ -193,11 +234,11 @@
                             <img src="{{ asset('images/vabu-logo.png') }}" alt="Vabu" class="h-8 w-auto mr-2">
                             Pay with Vabu
                         </a>
-                            </div>
-                            
+                    </div>
+                    
                     <div class="flex items-start space-x-2">
-                                <input 
-                                    type="checkbox" 
+                        <input 
+                            type="checkbox" 
                             name="vabu_payment_confirmed" 
                             id="vabu_payment_confirmed" 
                             class="h-4 w-4 mt-1 text-[#041E42] focus:ring-[#041E42] border-gray-300 rounded"
@@ -205,7 +246,7 @@
                         >
                         <label for="vabu_payment_confirmed" class="text-gray-700 text-sm">
                             I confirm that the payment has been completed via Vabu
-                            </label>
+                        </label>
                     </div>
 
                     <div>
@@ -217,9 +258,6 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#041E42] text-sm"
                             placeholder="Any additional payment information"
                         ></textarea>
-                </div>
-                
-                <div class="mt-8 pt-5 border-t border-gray-200">
                     <div class="flex justify-between">
                         <a href="{{ route('usher.registration.step2') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1" viewBox="0 0 20 20" fill="currentColor">
