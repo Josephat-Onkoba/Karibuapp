@@ -8,6 +8,7 @@ use App\Models\Participant;
 use App\Models\ConferenceDay;
 use App\Models\CheckIn;
 use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 // use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -80,8 +81,43 @@ class CheckInController extends Controller
             
             DB::beginTransaction();
             
+            // Check if participant has any ticket history
+            $hasTicketHistory = Ticket::where('participant_id', $participant->id)->exists();
+            
             // Get or create appropriate ticket
             $ticket = $this->getOrCreateTicket($participant, $conferenceDay);
+            
+            // If participant doesn't have any ticket history, send notifications
+            if (!$hasTicketHistory) {
+                // Send ticket via email
+                try {
+                    Mail::to($participant->email)
+                        ->send(new TicketMail($participant, $ticket));
+                        
+                    Log::info('Ticket email sent to participant', [
+                        'participant_id' => $participant->id,
+                        'email' => $participant->email,
+                        'ticket_number' => $ticket->ticket_number
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send ticket email: ' . $e->getMessage());
+                }
+                
+                // Send SMS notification if phone number is available
+                if ($participant->phone_number) {
+                    try {
+                        // Here you would implement SMS functionality
+                        // For example: SMSService::send($participant->phone_number, 'Your ticket number is ' . $ticket->ticket_number);
+                        
+                        Log::info('Ticket SMS notification sent to', [
+                            'participant_id' => $participant->id,
+                            'phone' => $participant->phone_number
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send ticket SMS: ' . $e->getMessage());
+                    }
+                }
+            }
         
         // Create the check-in record
             CheckIn::create([

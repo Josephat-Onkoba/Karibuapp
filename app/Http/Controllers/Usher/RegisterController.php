@@ -1118,7 +1118,12 @@ class RegisterController extends Controller
             ->findOrFail($id);
         
         // Check if the user is authorized to view this participant
-        if ($participant->registered_by_user_id !== Auth::id() && Auth::user()->role !== 'admin') {
+        // Allow access if user is admin, registered the participant, or has checked in the participant
+        $hasCheckedInParticipant = CheckIn::where('participant_id', $participant->id)
+            ->where('checked_by_user_id', Auth::id())
+            ->exists();
+            
+        if ($participant->registered_by_user_id !== Auth::id() && Auth::user()->role !== 'admin' && !$hasCheckedInParticipant) {
             abort(403, 'You are not authorized to view this participant.');
         }
         

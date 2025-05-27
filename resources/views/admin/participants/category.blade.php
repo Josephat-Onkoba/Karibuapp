@@ -23,10 +23,10 @@
                     Filter
                 </button>
                 
-                <button class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#041E42]">
-                    <i data-lucide="download" class="h-4 w-4 mr-2"></i>
-                    Export
-                </button>
+                <a href="{{ route('admin.participants.category.export', $category) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#041E42]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    Export to Excel
+                </a>
             </div>
         </div>
     </div>
@@ -37,7 +37,7 @@
         <div class="p-4 md:p-6 bg-white border-b border-gray-200">
             <div class="flex flex-col md:flex-row items-start md:items-center md:justify-between space-y-3 md:space-y-0">
                 <div class="flex flex-col sm:flex-row gap-2">
-                    <a href="{{ route('admin.participants.create', $category) }}" class="inline-flex items-center justify-center px-4 py-2 bg-[#041E42] hover:bg-[#0A2E5C] text-white rounded-md transition-colors">
+                    <a href="{{ route('admin.participants.select-role', $category) }}" class="inline-flex items-center justify-center px-4 py-2 bg-[#041E42] hover:bg-[#0A2E5C] text-white rounded-md transition-colors">
                         <i data-lucide="plus" class="h-4 w-4 mr-2"></i>
                         <span>Add Participant</span>
                     </a>
@@ -150,18 +150,22 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                 <div class="flex space-x-2">
-                                    <button class="p-1 rounded-full hover:bg-blue-100 text-blue-600" title="View Details">
+                                    <a href="{{ route('admin.participants.show', ['category' => $category, 'id' => $participant->id]) }}" class="p-1 rounded-full hover:bg-blue-100 text-blue-600" title="View Details">
                                         <i data-lucide="eye" class="h-4 w-4"></i>
-                                    </button>
+                                    </a>
                                     <button class="p-1 rounded-full hover:bg-green-100 text-green-600" title="Check In">
                                         <i data-lucide="check" class="h-4 w-4"></i>
                                     </button>
-                                    <button class="p-1 rounded-full hover:bg-indigo-100 text-indigo-600" title="Edit">
+                                    <a href="{{ route('admin.participants.edit', ['category' => $category, 'id' => $participant->id]) }}" class="p-1 rounded-full hover:bg-indigo-100 text-indigo-600" title="Edit">
                                         <i data-lucide="edit" class="h-4 w-4"></i>
-                                    </button>
-                                    <button class="p-1 rounded-full hover:bg-red-100 text-red-600" title="Delete">
-                                        <i data-lucide="trash-2" class="h-4 w-4"></i>
-                                    </button>
+                                    </a>
+                                    <form action="{{ route('admin.participants.destroy', ['category' => $category, 'id' => $participant->id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this participant?');" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1 rounded-full hover:bg-red-100 text-red-600" title="Delete">
+                                            <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
@@ -176,7 +180,7 @@
                                     <h3 class="text-lg font-medium text-gray-900 mb-1">No participants found</h3>
                                     <p class="text-gray-500 mb-4">Get started by adding your first {{ strtolower($title) }}</p>
                                     <div>
-                                        <a href="{{ route('admin.participants.create', $category) }}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#041E42] hover:bg-[#0A2E5C] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#041E42]">
+                                        <a href="{{ route('admin.participants.select-role', $category) }}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#041E42] hover:bg-[#0A2E5C] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#041E42]">
                                             <i data-lucide="plus" class="h-4 w-4 mr-2"></i>
                                             Add Participant
                                         </a>

@@ -59,7 +59,27 @@ Route::middleware(['auth'])->group(function () {
 
 // Admin Routes
 Route::middleware(['auth', 'role:admin', 'first.login'])->prefix('admin')->name('admin.')->group(function () {
+    // Dashboard routes
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/filter', [AdminDashboardController::class, 'filter'])->name('dashboard.filter');
+    
+    // Admin access to usher features
+    Route::get('/check-in', [UsherCheckInController::class, 'index'])->name('check-in');
+    Route::post('/check-in', [UsherCheckInController::class, 'checkIn'])->name('check-in.process');
+    Route::get('/check-in/search', [UsherCheckInController::class, 'search'])->name('check-in.search');
+    
+    Route::get('/registration', [UsherRegisterController::class, 'index'])->name('registration');
+    Route::get('/registration/step1', [UsherRegisterController::class, 'showStep1'])->name('registration.step1');
+    Route::post('/registration/step1', [UsherRegisterController::class, 'processStep1'])->name('registration.process_step1');
+    Route::get('/registration/step2', [UsherRegisterController::class, 'showStep2'])->name('registration.step2');
+    Route::post('/registration/step2', [UsherRegisterController::class, 'processStep2'])->name('registration.process_step2');
+    
+    Route::get('/meals', [MealController::class, 'index'])->name('meals');
+    Route::post('/meals/select', [MealController::class, 'selectMeal'])->name('meals.select');
+    Route::post('/meals/serve', [MealController::class, 'serve'])->name('meals.serve');
+    
+    Route::get('/tickets', [TicketController::class, 'index'])->name('tickets');
+    Route::post('/tickets/search', [TicketController::class, 'search'])->name('tickets.search');
     
     // User management routes
     Route::get('/users', [AdminUserController::class, 'index'])->name('users');
@@ -71,11 +91,28 @@ Route::middleware(['auth', 'role:admin', 'first.login'])->prefix('admin')->name(
     
     // Participant management routes
     Route::get('/participants', [AdminParticipantController::class, 'index'])->name('participants');
-    Route::get('/participants/{category}', [AdminParticipantController::class, 'category'])->name('participants.category');
+    
+    // Export routes - defined first to avoid conflicts with category routes
+    Route::get('/participants/export', [AdminParticipantController::class, 'exportAll'])->name('participants.export');
+    
+    // Category specific routes
+    Route::get('/participants/{category}/export', [AdminParticipantController::class, 'exportCategory'])->name('participants.category.export');
+    Route::get('/participants/{category}/select-role', [AdminParticipantController::class, 'selectRole'])->name('participants.select-role');
     Route::get('/participants/{category}/create', [AdminParticipantController::class, 'create'])->name('participants.create');
     Route::post('/participants/{category}', [AdminParticipantController::class, 'store'])->name('participants.store');
+    
+    // CRUD operations for individual participants
+    Route::get('/participants/{category}/{id}', [AdminParticipantController::class, 'show'])->name('participants.show');
+    Route::get('/participants/{category}/{id}/edit', [AdminParticipantController::class, 'edit'])->name('participants.edit');
+    Route::put('/participants/{category}/{id}', [AdminParticipantController::class, 'update'])->name('participants.update');
+    Route::delete('/participants/{category}/{id}', [AdminParticipantController::class, 'destroy'])->name('participants.destroy');
+    
+    // Import functionality
     Route::get('/participants/{category}/import', [AdminParticipantController::class, 'showImport'])->name('participants.import');
     Route::post('/participants/{category}/import', [AdminParticipantController::class, 'import'])->name('participants.import.process');
+    
+    // This must be last to avoid conflicts with other participant routes
+    Route::get('/participants/{category}', [AdminParticipantController::class, 'category'])->name('participants.category');
     
     // Conference days management routes
     Route::get('/conference-days', [AdminConferenceDayController::class, 'index'])->name('conference-days.index');
