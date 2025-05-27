@@ -637,29 +637,36 @@
         // Handle form submission
         const form = document.getElementById('registration-form');
         form.addEventListener('submit', function(event) {
+            const paidCategories = ['general', 'exhibitor', 'presenter'];
             const paymentStatus = paymentStatusSelect ? paymentStatusSelect.value : null;
             
-            if (category === 'general') {
-                const eligibleDays = eligibleDaysSelect ? eligibleDaysSelect.value : null;
-                if (!eligibleDays && paymentStatus !== 'Waived') {
+            // Only validate payment status for paid categories
+            if (paidCategories.includes(category)) {
+                if (!paymentStatus) {
                     event.preventDefault();
-                    alert('Please select the number of eligible days.');
+                    alert('Please select a payment status.');
                     return;
                 }
-            }
-            
-            if (category === 'presenter') {
-                const presenterType = presenterTypeSelect ? presenterTypeSelect.value : null;
-                if (!presenterType) {
-                    event.preventDefault();
-                    alert('Please select the presenter type.');
-                    return;
+                
+                // Additional validation for general category
+                if (category === 'general') {
+                    const eligibleDays = eligibleDaysSelect ? eligibleDaysSelect.value : null;
+                    if (!eligibleDays && paymentStatus !== 'Waived') {
+                        event.preventDefault();
+                        alert('Please select the number of eligible days.');
+                        return;
+                    }
                 }
-            }
-            
-            if (!paymentStatus) {
-                event.preventDefault();
-                alert('Please select a payment status.');
+                
+                // Additional validation for presenters
+                if (category === 'presenter') {
+                    const presenterType = presenterTypeSelect ? presenterTypeSelect.value : null;
+                    if (!presenterType) {
+                        event.preventDefault();
+                        alert('Please select the presenter type.');
+                        return;
+                    }
+                }
             }
         });
     });

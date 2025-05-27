@@ -3,6 +3,32 @@
 @section('title', 'Check-In Participants')
 
 @section('content')
+<style>
+    /* Error message styling */
+    .alert-message {
+        z-index: 1000;
+        min-width: 300px;
+        max-width: 90%;
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    /* Form validation styling */
+    .is-invalid {
+        border-color: #ef4444 !important;
+    }
+    
+    .invalid-feedback {
+        color: #ef4444;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+</style>
+
 <div class="container mx-auto px-4 py-6">
     <div class="mb-6 flex justify-between items-center">
         <h1 class="text-3xl font-bold text-primary">Check-In Participants</h1>
@@ -144,27 +170,59 @@
                         </div>
                     </div>
 
+                    <!-- Conference Day Selection Card -->
                     <div class="mb-6">
-                        <label class="block text-gray-700 font-semibold mb-2" for="conference_day_id">
-                            Conference Day
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i data-lucide="calendar" class="h-5 w-5 text-gray-400"></i>
-                            </div>
-                            <select name="conference_day_id" id="conference_day_id" 
-                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none bg-white transition-colors" 
-                                required>
-                                <option value="">Select a day</option>
-                                @foreach($days as $day)
-                                    <option value="{{ $day->id }}" {{ $today && $today->id == $day->id ? 'selected' : '' }}>
-                                        {{ $day->name }} ({{ $day->date->format('M d, Y') }})
-                                        @if($day->isToday()) - TODAY @endif
-                                    </option>
-                                @endforeach
-                            </select>
-                            <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                                <i data-lucide="chevron-down" class="h-4 w-4 text-gray-400"></i>
+                        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-all hover:shadow-md">
+                            <div class="p-5">
+                                <div class="flex items-center mb-4">
+                                    <div class="p-2 rounded-full bg-blue-50 text-blue-600 mr-3">
+                                        <i data-lucide="calendar-days" class="h-5 w-5"></i>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-800">Select Conference Day</h3>
+                                </div>
+                                
+                                <div class="relative">
+                                    <select 
+                                        name="conference_day_id" 
+                                        id="conference_day_id" 
+                                        class="w-full pl-12 pr-10 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none bg-white"
+                                        style="background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1.5rem;"
+                                    >
+                                        <option value="" disabled {{ !old('conference_day_id', $today ? $today->id : '') ? 'selected' : '' }}>Choose a conference day</option>
+                                        @foreach($days as $day)
+                                            <option 
+                                                value="{{ $day->id }}" 
+                                                {{ (old('conference_day_id', $today ? $today->id : '') == $day->id) ? 'selected' : '' }}
+                                                data-date="{{ $day->date->format('Y-m-d') }}"
+                                                class="flex items-center"
+                                            >
+                                                <span class="font-medium">{{ $day->name }}</span>
+                                                <span class="text-gray-500 ml-2">• {{ $day->date->format('D, M j, Y') }}</span>
+                                                @if($day->date->isToday())
+                                                    <span class="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">Today</span>
+                                                @endif
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i data-lucide="calendar-days" class="h-5 w-5 text-gray-400"></i>
+                                    </div>
+                                    
+                                    @error('conference_day_id')
+                                        <div class="mt-2 flex items-center text-red-600">
+                                            <i data-lucide="alert-circle" class="h-4 w-4 mr-1"></i>
+                                            <span class="text-sm">{{ $message }}</span>
+                                        </div>
+                                    @enderror
+                                </div>
+                                
+                                <div id="day-info" class="mt-3 p-3 bg-blue-50 rounded-lg hidden">
+                                    <div class="flex items-start">
+                                        <i data-lucide="info" class="h-4 w-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0"></i>
+                                        <p class="text-sm text-blue-700" id="selected-day-info"></p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -314,6 +372,95 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
             searchResults.classList.add('hidden');
+        }
+    });
+    
+    // Handle form submission
+    document.getElementById('check-in-form').addEventListener('submit', function(e) {
+        const participantId = participantIdField.value;
+        const conferenceDay = document.getElementById('conference_day_id').value;
+        
+        if (!participantId) {
+            e.preventDefault();
+            showAlert('Please select a participant first.', 'error');
+            return false;
+        }
+        
+        if (!conferenceDay) {
+            e.preventDefault();
+            showAlert('Please select a conference day.', 'error');
+            return false;
+        }
+    });
+    
+    // Function to show alert messages
+    function showAlert(message, type = 'error') {
+        // Remove any existing alerts
+        const existingAlert = document.querySelector('.alert-message');
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+        
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert-message fixed top-4 right-4 p-4 rounded-lg shadow-lg ${type === 'error' ? 'bg-red-100 border-l-4 border-red-500 text-red-700' : 'bg-green-100 border-l-4 border-green-500 text-green-700'}`;
+        alertDiv.role = 'alert';
+        
+        const icon = type === 'error' ? 'alert-triangle' : 'check-circle';
+        alertDiv.innerHTML = `
+            <div class="flex items-center">
+                <i data-lucide="${icon}" class="h-6 w-6 mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        lucide.createIcons();
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+    
+    // Handle conference day selection
+    document.addEventListener('DOMContentLoaded', function() {
+        const conferenceDaySelect = document.getElementById('conference_day_id');
+        const dayInfo = document.getElementById('day-info');
+        const selectedDayInfo = document.getElementById('selected-day-info');
+        
+        if (conferenceDaySelect) {
+            // Show info for initially selected day if not the placeholder
+            if (conferenceDaySelect.value) {
+                updateDayInfo(conferenceDaySelect);
+            }
+            
+            // Update info when selection changes
+            conferenceDaySelect.addEventListener('change', function() {
+                updateDayInfo(this);
+            });
+        }
+        
+        function updateDayInfo(selectElement) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const date = selectedOption.dataset.date;
+            
+            if (date) {
+                const dayName = new Date(date).toLocaleDateString('en-US', { weekday: 'long' });
+                const formattedDate = new Date(date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                dayInfo.classList.remove('hidden');
+                selectedDayInfo.innerHTML = `
+                    <strong>${selectedOption.textContent.split('•')[0].trim()}</strong> on 
+                    <span class="font-medium">${dayName}, ${formattedDate}</span>.
+                    ${selectedOption.text.includes('Today') ? 'This is today\'s session.' : ''}
+                `;
+            } else {
+                dayInfo.classList.add('hidden');
+            }
         }
     });
     

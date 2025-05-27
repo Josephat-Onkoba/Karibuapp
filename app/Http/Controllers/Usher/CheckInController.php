@@ -16,9 +16,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TicketMail;
 use Illuminate\Support\Facades\Session;
+use App\Services\TalkSasaSmsService;
 
 class CheckInController extends Controller
 {
+    protected $smsService;
+
+    public function __construct(TalkSasaSmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
     /**
      * Display the check-in form.
      */
@@ -40,13 +47,44 @@ class CheckInController extends Controller
      */
     public function checkIn(Request $request)
     {
+        // Get today's conference day
+        $today = ConferenceDay::getToday();
+        
         $validated = $request->validate([
             'participant_id' => 'required|exists:participants,id',
-            'conference_day_id' => 'required|exists:conference_days,id',
+            'conference_day_id' => [
+                'required',
+                'exists:conference_days,id',
+                function ($attribute, $value, $fail) {
+                    $conferenceDay = ConferenceDay::find($value);
+                    $today = now()->startOfDay();
+                    
+                    // Check if the selected day is in the future
+                    if ($conferenceDay->date->startOfDay() > $today) {
+                        $fail('Cannot check in for a future day. Please select today\'s date.');
+                    }
+                    
+                    // Optional: Check if the day is too far in the past (adjust days as needed)
+                    if ($conferenceDay->date->startOfDay() < $today->copy()->subDays(1)) {
+                        $fail('Cannot check in for a day that has already passed.');
+                    }
+                },
+            ],
             'notes' => 'nullable|string',
             'redirect_to' => 'nullable|string|in:my-registrations,check-in,participant_view',
             'participant_id_redirect' => 'nullable|exists:participants,id',
         ]);
+        
+        // Get the conference day
+        $conferenceDay = ConferenceDay::findOrFail($validated['conference_day_id']);
+        $today = now()->startOfDay();
+        
+        // Check if trying to check in for today
+        if ($conferenceDay->date->startOfDay() != $today) {
+            return back()
+                ->withInput()
+                ->with('error', 'You can only check in participants for today.');
+        }
         
         // Check if the participant is already checked in for this day
         $alreadyCheckedIn = CheckIn::where('participant_id', $validated['participant_id'])
@@ -54,7 +92,9 @@ class CheckInController extends Controller
             ->exists();
         
         if ($alreadyCheckedIn) {
-            return redirect()->back()->with('error', 'Participant is already checked in for this day.');
+            return back()
+                ->withInput()
+                ->with('error', 'This participant is already checked in for this day.');
         }
         
         try {
@@ -84,20 +124,26 @@ class CheckInController extends Controller
             // Check if participant has any ticket history
             $hasTicketHistory = Ticket::where('participant_id', $participant->id)->exists();
             
+            // Check if already checked in for this specific day
+            $alreadyCheckedInToday = CheckIn::where('participant_id', $participant->id)
+                ->where('conference_day_id', $conferenceDay->id)
+                ->exists();
+                
             // Get or create appropriate ticket
             $ticket = $this->getOrCreateTicket($participant, $conferenceDay);
             
-            // If participant doesn't have any ticket history, send notifications
-            if (!$hasTicketHistory) {
+            // Send notifications for first check-in or when checking in on a new day
+            if (!$hasTicketHistory || !$alreadyCheckedInToday) {
                 // Send ticket via email
                 try {
-                    Mail::to($participant->email)
-                        ->send(new TicketMail($participant, $ticket));
+                    $mail = new TicketMail($ticket);
+                    Mail::to($participant->email)->send($mail);
                         
                     Log::info('Ticket email sent to participant', [
                         'participant_id' => $participant->id,
                         'email' => $participant->email,
-                        'ticket_number' => $ticket->ticket_number
+                        'ticket_number' => $ticket->ticket_number,
+                        'conference_day' => $conferenceDay->id
                     ]);
                 } catch (\Exception $e) {
                     Log::error('Failed to send ticket email: ' . $e->getMessage());
@@ -106,12 +152,16 @@ class CheckInController extends Controller
                 // Send SMS notification if phone number is available
                 if ($participant->phone_number) {
                     try {
-                        // Here you would implement SMS functionality
-                        // For example: SMSService::send($participant->phone_number, 'Your ticket number is ' . $ticket->ticket_number);
+                        // Send SMS notification using TalkSasaSmsService
+                        $dayName = $conferenceDay->name ?? 'Day ' . $conferenceDay->id;
+                        $message = "Hello {$participant->full_name}, welcome to {$dayName}! Your ticket number is: {$ticket->ticket_number}. Thank you for attending!";
+                        $this->smsService->sendSms($participant->phone_number, $message);
                         
                         Log::info('Ticket SMS notification sent to', [
                             'participant_id' => $participant->id,
-                            'phone' => $participant->phone_number
+                            'phone' => $participant->phone_number,
+                            'conference_day' => $conferenceDay->id,
+                            'is_first_checkin' => !$hasTicketHistory
                         ]);
                     } catch (\Exception $e) {
                         Log::error('Failed to send ticket SMS: ' . $e->getMessage());
