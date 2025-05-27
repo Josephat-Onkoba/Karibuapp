@@ -216,7 +216,7 @@
                                     required
                                 >
                                     <option value="" disabled selected>Select presenter type</option>
-                                    <option value="non-student" {{ old('presenter_type') == 'non-student' ? 'selected' : '' }}>Non-Student</option>
+                                    <option value="non_student" {{ old('presenter_type') == 'non_student' ? 'selected' : '' }}>Non_Student</option>
                                     <option value="student" {{ old('presenter_type') == 'student' ? 'selected' : '' }}>Student</option>
                                     <option value="international" {{ old('presenter_type') == 'international' ? 'selected' : '' }}>International</option>
                                 </select>

@@ -265,7 +265,7 @@ class ParticipantController extends Controller
         }
         
         if ($request->role == 'presenter') {
-            $rules['presenter_type'] = 'required|in:student,non-student,international';
+            $rules['presenter_type'] = 'required|in:student,non_student,international';
         }
         
         $validatedData = $request->validate($rules);
@@ -414,7 +414,7 @@ class ParticipantController extends Controller
         }
         
         if ($request->role == 'presenter') {
-            $rules['presenter_type'] = 'required|in:student,non-student,international';
+            $rules['presenter_type'] = 'required|in:student,non_student,international';
         }
         
         $validatedData = $request->validate($rules);

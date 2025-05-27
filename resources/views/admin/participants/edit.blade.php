@@ -107,7 +107,7 @@
                             <label for="presenter_type" class="block text-sm font-medium text-gray-700 mb-1">Presenter Type <span class="text-red-600">*</span></label>
                             <select id="presenter_type" name="presenter_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#041E42] focus:border-[#041E42]">
                                 <option value="student" {{ old('presenter_type', $participant->presenter_type) == 'student' ? 'selected' : '' }}>Student</option>
-                                <option value="non-student" {{ old('presenter_type', $participant->presenter_type) == 'non-student' ? 'selected' : '' }}>Non-Student</option>
+                                <option value="non_student" {{ old('presenter_type', $participant->presenter_type) == 'non_student' ? 'selected' : '' }}>Non-Student</option>
                                 <option value="international" {{ old('presenter_type', $participant->presenter_type) == 'international' ? 'selected' : '' }}>International</option>
                             </select>
                         </div>
