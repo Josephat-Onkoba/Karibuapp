@@ -167,8 +167,35 @@ class PaymentController extends Controller
                 'transaction_code' => $data['transaction_code'] ?? null
             ]);
             
-            // Update session data
-            Session::put('registration_data', $data);
+            // Debug: Log current session data before update
+            Log::info('PaymentController - Session data before update:', [
+                'session_data' => Session::get('registration_data', []),
+                'new_payment_data' => [
+                    'payment_status' => $data['payment_status'],
+                    'transaction_code' => $data['transaction_code'],
+                    'payment_amount' => $data['payment_amount']
+                ]
+            ]);
+            
+            // Update session data with payment confirmation
+            $registrationData = Session::get('registration_data', []);
+            
+            // Update the payment information
+            $registrationData['payment_confirmed'] = true;
+            $registrationData['payment_status'] = $data['payment_status'];
+            $registrationData['transaction_code'] = $data['transaction_code'] ?? null;
+            $registrationData['payment_amount'] = $data['payment_amount'] ?? 0;
+            $registrationData['payment_method'] = $validated['payment_method'];
+            
+            // Save the updated session data
+            Session::put('registration_data', $registrationData);
+            Session::save(); // Ensure session is saved immediately
+            
+            // Debug: Verify session was saved
+            Log::info('PaymentController - Final session data:', [
+                'session_data' => Session::get('registration_data', []),
+                'session_id' => Session::getId()
+            ]);
             
             // Attempt to create a preliminary payment record in the database
             try {

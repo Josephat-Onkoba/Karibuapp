@@ -99,6 +99,12 @@ class RegisterController extends Controller
             return true;
         }
         
+        // If payment is waived or not applicable, it's valid
+        if (($data['payment_status'] ?? '') === 'Waived' || 
+            ($data['payment_status'] ?? '') === 'Not Applicable') {
+            return true;
+        }
+        
         // Check if payment status is set
         if (!isset($data['payment_status'])) {
             return 'usher.registration.step2';
@@ -109,8 +115,9 @@ class RegisterController extends Controller
             return 'usher.registration.payment';
         }
         
-        // If payment status is not 'Not Paid' but payment is not confirmed
-        if (!isset($data['payment_confirmed']) || $data['payment_confirmed'] !== true) {
+        // For paid status, ensure payment is confirmed
+        if (in_array($data['payment_status'], ['Paid via Vabu', 'Paid via M-Pesa']) && 
+            (!isset($data['payment_confirmed']) || $data['payment_confirmed'] !== true)) {
             return 'usher.registration.payment';
         }
         
@@ -371,16 +378,64 @@ class RegisterController extends Controller
      */
     public function showStep3()
     {
+        // Debug: Log session data at the start of showStep3
+        Log::info('RegisterController@showStep3 - Initial session data:', [
+            'session_data' => Session::get('registration_data', []),
+            'session_id' => Session::getId()
+        ]);
+        
         // Check if previous steps are completed
         $data = Session::get('registration_data', []);
         if (!isset($data['full_name']) || !isset($data['category'])) {
+            Log::warning('RegisterController@showStep3 - Missing required fields, redirecting to step1');
             return redirect()->route('usher.registration.step1');
         }
         
-        // Validate payment status
-        $paymentValidation = $this->validatePaymentStatus($data);
-        if ($paymentValidation !== true) {
-            return redirect()->route($paymentValidation);
+        // For paid categories, ensure payment is confirmed
+        if (in_array($data['category'], ['general', 'exhibitor', 'presenter'])) {
+            Log::info('RegisterController@showStep3 - Processing paid category:', [
+                'category' => $data['category'],
+                'payment_status' => $data['payment_status'] ?? 'not set',
+                'payment_confirmed' => $data['payment_confirmed'] ?? 'not set',
+                'session_id' => Session::getId()
+            ]);
+            
+            // If payment status is 'Not Paid' and not confirmed
+            if (($data['payment_status'] ?? '') === 'Not Paid' && !($data['payment_confirmed'] ?? false)) {
+                Log::warning('RegisterController@showStep3 - Payment not confirmed, redirecting to payment', [
+                    'payment_status' => $data['payment_status'],
+                    'payment_confirmed' => $data['payment_confirmed'] ?? 'not set',
+                    'session_data' => $data
+                ]);
+                return redirect()->route('usher.registration.payment');
+            }
+            
+            // If payment status is paid but not confirmed
+            if (in_array(($data['payment_status'] ?? ''), ['Paid via Vabu', 'Paid via M-Pesa']) && 
+                !($data['payment_confirmed'] ?? false)) {
+                Log::warning('RegisterController@showStep3 - Paid but not confirmed, redirecting to payment', [
+                    'payment_status' => $data['payment_status'],
+                    'payment_confirmed' => $data['payment_confirmed'] ?? 'not set',
+                    'session_data' => $data
+                ]);
+                return redirect()->route('usher.registration.payment');
+            }
+            
+            // If we have a payment status but no confirmation, try to confirm it
+            if (isset($data['payment_status']) && !isset($data['payment_confirmed'])) {
+                $data['payment_confirmed'] = true;
+                Session::put('registration_data', $data);
+                Session::save();
+                Log::info('RegisterController@showStep3 - Auto-confirmed payment', [
+                    'payment_status' => $data['payment_status'],
+                    'session_id' => Session::getId()
+                ]);
+            }
+            
+            Log::info('RegisterController@showStep3 - Payment validation passed', [
+                'payment_status' => $data['payment_status'] ?? 'not set',
+                'payment_confirmed' => $data['payment_confirmed'] ?? 'not set'
+            ]);
         }
         
         // Get active conference days

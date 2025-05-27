@@ -124,9 +124,11 @@
                 <form action="{{ route('usher.registration.process_payment') }}" method="POST" class="space-y-4">
                 @csrf
                     <input type="hidden" name="payment_method" value="mpesa">
+                    <input type="hidden" name="payment_status" value="Paid via M-Pesa">
                     <input type="hidden" name="payment_confirmed" value="1">
                     <input type="hidden" name="processed_by_user_id" value="{{ Auth::id() }}">
                     <input type="hidden" name="payment_amount" value="{{ $amount }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
                     @if(isset($data['participant_id']))
                     <input type="hidden" name="participant_id" value="{{ $data['participant_id'] }}">
                     @endif
