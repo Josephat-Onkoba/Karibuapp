@@ -17,6 +17,10 @@ class TalkSasaSmsService
         $this->senderId = config('talksasa.sender_id');
         $this->apiUrl = config('talksasa.api_url');
         
+        if (empty($this->apiToken)) {
+            Log::error('TalkSasa API token is not configured');
+        }
+        
         Log::info('TalkSasaSmsService initialized', [
             'has_token' => !empty($this->apiToken),
             'sender_id' => $this->senderId,
@@ -35,9 +39,23 @@ class TalkSasaSmsService
     public function sendSms($recipients, string $message, ?string $scheduleTime = null)
     {
         try {
+            if (empty($this->apiToken)) {
+                throw new \Exception('TalkSasa API token is not configured');
+            }
+
             // Convert recipients array to comma-separated string if necessary
             if (is_array($recipients)) {
                 $recipients = implode(',', $recipients);
+            }
+
+            // Validate recipient phone number format
+            if (empty($recipients)) {
+                throw new \Exception('Recipient phone number is required');
+            }
+
+            // Validate message
+            if (empty($message)) {
+                throw new \Exception('Message content is required');
             }
 
             $payload = [
@@ -63,7 +81,7 @@ class TalkSasaSmsService
                 'Authorization' => 'Bearer ' . $this->apiToken,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
-            ])->post($this->apiUrl . '/send', $payload);
+            ])->timeout(30)->post($this->apiUrl . '/send', $payload);
 
             $result = $response->json();
 
@@ -79,28 +97,37 @@ class TalkSasaSmsService
                 ];
             }
 
+            $errorMessage = $result['message'] ?? 'Unknown error';
+            if ($response->status() === 401) {
+                $errorMessage = 'Invalid API token or authentication failed';
+            } elseif ($response->status() === 403) {
+                $errorMessage = 'Unauthorized access or invalid sender ID';
+            }
+
             Log::error('Failed to send SMS', [
                 'recipients' => $recipients,
                 'error' => $result,
                 'status_code' => $response->status(),
-                'response_body' => $response->body()
+                'response_body' => $response->body(),
+                'error_message' => $errorMessage
             ]);
 
             return [
                 'success' => false,
-                'error' => $result['message'] ?? 'Failed to send SMS'
+                'error' => $errorMessage
             ];
 
         } catch (\Exception $e) {
+            $errorMessage = $e->getMessage();
             Log::error('SMS sending error', [
                 'recipients' => $recipients,
-                'error' => $e->getMessage(),
+                'error' => $errorMessage,
                 'trace' => $e->getTraceAsString()
             ]);
 
             return [
                 'success' => false,
-                'error' => 'Failed to send SMS: ' . $e->getMessage()
+                'error' => 'Failed to send SMS: ' . $errorMessage
             ];
         }
     }
