@@ -842,7 +842,7 @@ class RegisterController extends Controller
                 $message .= "Please complete payment to attend.";
             } elseif ($participant->payment_status === 'Paid via M-Pesa' || $participant->payment_status === 'Paid via Vabu') {
                 $message .= "Welcome to Zetech University"; 
-                $message .= "For more information about the conference, visit https://conference.zetech.ac.ke You can also view the full program at https://conference.zetech.ac.ke/index.php/conference-2025/program" }
+                $message .= "For more information about the conference, visit https://conference.zetech.ac.ke You can also view the full program at https://conference.zetech.ac.ke/index.php/conference-2025/program"}
             
             // Send SMS with retry logic
             $retryCount = 0;
