@@ -154,7 +154,7 @@ class CheckInController extends Controller
                     try {
                         // Send SMS notification using TalkSasaSmsService
                         $dayName = $conferenceDay->name ?? 'Day ' . $conferenceDay->id;
-                        $message = "Hello {$participant->full_name}, welcome to {$dayName}! Your ticket number is: {$ticket->ticket_number}. Thank you for attending!";
+                        $message = "Hello {$participant->full_name}, welcome to {$dayName}! Your Access ticket number is: {$ticket->ticket_number}. Thank you for attending!";
                         $this->smsService->sendSms($participant->phone_number, $message);
                         
                         Log::info('Ticket SMS notification sent to', [

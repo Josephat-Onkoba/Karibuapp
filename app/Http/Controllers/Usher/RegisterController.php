@@ -827,9 +827,9 @@ class RegisterController extends Controller
             if ($ticket->day2_valid) $validDays[] = "Day 2";
             if ($ticket->day3_valid) $validDays[] = "Day 3";
             
-            $message = "Dear {$participant->full_name}, welcome to ZURIW25 Conference!\n\n";
+            $message = "Dear {$participant->full_name}, welcome to the 7th Zetech University Research Conference!\n\n";
             $message .= "Your registration is complete.\n";
-            $message .= "Ticket #: {$ticket->ticket_number}\n";
+            $message .= "Access Ticket #: {$ticket->ticket_number}\n";
             $message .= "Category: {$participant->category}\n";
             $message .= "Valid for: " . implode(", ", $validDays) . "\n\n";
             
@@ -841,8 +841,7 @@ class RegisterController extends Controller
                 $message .= "Account: 2031653161\n";
                 $message .= "Please complete payment to attend.";
             } elseif ($participant->payment_status === 'Paid via M-Pesa' || $participant->payment_status === 'Paid via Vabu') {
-                $message .= "Payment Status: Confirmed\n";
-                $message .= "Amount Paid: KES " . number_format($participant->payment_amount, 2);
+                $message .= "Welcome to Zetech University";
             }
             
             // Send SMS with retry logic

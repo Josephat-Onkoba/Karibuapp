@@ -40,10 +40,9 @@ class TicketSmsNotification extends Notification
 
         $message = "Dear {$this->ticket->participant->full_name},\n\n";
         $message .= "Your RIW25 Conference ticket has been generated.\n";
-        $message .= "Ticket Number: {$this->ticket->ticket_number}\n";
+        $message .= "Access Ticket: {$this->ticket->ticket_number}\n";
         $message .= "Valid for: " . implode(', ', $validDays) . "\n";
-        $message .= "Please present this ticket number at the registration desk.\n\n";
-        $message .= "Thank you for participating in RIW25 Conference!";
+        $message .= "Thank you for participating in the 7th Zetech Research and Innovation Week 2025 Conference!";
 
         return [
             'phone' => $notifiable->phone_number,
