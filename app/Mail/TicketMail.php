@@ -7,8 +7,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Ticket;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\View;
 
 class TicketMail extends Mailable
 {
@@ -39,22 +37,12 @@ class TicketMail extends Mailable
      */
     public function build()
     {
-        $conferenceDays = \App\Models\ConferenceDay::all();
-        
-        // Generate PDF ticket using Laravel-DomPDF
-        $pdf = Pdf::loadView('usher.registration.pdf-ticket', [
-            'ticket' => $this->ticket, 
-            'conferenceDays' => $conferenceDays
-        ]);
-        $pdf->setPaper('A4');
-        $pdfContent = $pdf->output();
-        $filename = "Ticket-{$this->ticket->ticket_number}.pdf";
-
         return $this
-            ->subject('Your ZURIW25 Conference Ticket')
+            ->subject('Your ZURIW25 Conference Details')
             ->view('emails.ticket')
-            ->attachData($pdfContent, $filename, [
+            ->attach(storage_path('app/public/ZURIW25-Program.pdf'), [
+                'as' => 'ZURIW25-Program.pdf',
                 'mime' => 'application/pdf',
             ]);
     }
-} 
+}

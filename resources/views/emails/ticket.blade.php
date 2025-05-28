@@ -144,35 +144,36 @@
                     <tr>
                         <td class="body" width="100%" cellpadding="0" cellspacing="0">
                             <table class="inner-body" align="center" width="600" cellpadding="0" cellspacing="0" role="presentation">
-                                <tr>
-                                    <td class="content-cell">
-                                        <h1>Hello {{ $ticket->participant->full_name }},</h1>
-                                        <p>Thank you for registering for the ZURIW25 Conference. Your ticket is attached to this email.</p>
-                                        <p>Ticket Summary:</p>
-                                        <ul>
-                                            <li>Ticket Number: <strong>{{ $ticket->ticket_number }}</strong></li>
-                                            <li>Role: <strong>{{ $ticket->participant->role }}</strong></li>
-                                            <li>Valid Dates:</li>
-                                            <ul style="margin-top: 5px;">
-                                                @foreach(\App\Models\ConferenceDay::all() as $day)
-                                                    @if(($day->id == 1 && $ticket->day1_valid) || 
-                                                        ($day->id == 2 && $ticket->day2_valid) || 
-                                                        ($day->id == 3 && $ticket->day3_valid))
-                                                        <li>{{ $day->name }} - {{ $day->date->format('F j, Y') }}</li>
-                                                    @endif
-                                                @endforeach
-                                            </ul>
-                                        </ul>
-                                        <p>Please find your complete ticket attached as a PDF file named <strong>"Ticket-{{ $ticket->ticket_number }}.pdf"</strong>. We recommend either printing it or keeping it accessible on your mobile device for the conference.</p>
-                                        
-                                        <div style="background-color: #e8f0fe; padding: 15px; border-left: 4px solid #1a73e8; margin: 20px 0; border-radius: 4px;">
-                                            <strong>📎 Important:</strong> Check the attachments in this email for your official conference ticket in PDF format. You will need to present this ticket for admission.
-                                        </div>
-                                        
-                                        <p>We look forward to seeing you!</p>
-                                        <p>Best regards,<br>ZURIW25 Conference Team</p>
-                                    </td>
+                            <tr>
+                                <td class="content-cell">
+                                    <h1>Hello {{ $ticket->participant->full_name }},</h1>
+                                    <p>Thank you for registering for the ZURIW25 Conference. The official conference program is attached to this email.</p>
+                                    <p>Ticket Summary:</p>
+                                    <ul>
+                                    <li>Ticket Number: <strong>{{ $ticket->ticket_number }}</strong></li>
+                                    <li>Role: <strong>{{ $ticket->participant->role }}</strong></li>
+                                    <li>Valid Dates:</li>
+                                    <ul style="margin-top: 5px;">
+                                        @foreach(\App\Models\ConferenceDay::all() as $day)
+                                        @if(($day->id == 1 && $ticket->day1_valid) || 
+                                            ($day->id == 2 && $ticket->day2_valid) || 
+                                            ($day->id == 3 && $ticket->day3_valid))
+                                            <li>{{ $day->name }} - {{ $day->date->format('F j, Y') }}</li>
+                                        @endif
+                                        @endforeach
+                                    </ul>
+                                    </ul>
+                                    <p>Please find the complete conference program attached as a PDF file named <strong>"ZURIW25-Program.pdf"</strong>. We recommend reviewing it to familiarize yourself with the event schedule and sessions.</p>
+                                    
+                                    <div style="background-color: #e8f0fe; padding: 15px; border-left: 4px solid #1a73e8; margin: 20px 0; border-radius: 4px;">
+                                    <strong>📎 Important:</strong> Check the attachments in this email for the official conference program in PDF format. It contains detailed information about the sessions, speakers, and other essential details.
+                                    </div>
+                                    
+                                    <p>We look forward to seeing you!</p>
+                                    <p>Best regards,<br>ZURIW25 Conference Team</p>
+                                </td>
                                 </tr>
+
                             </table>
                         </td>
                     </tr>
