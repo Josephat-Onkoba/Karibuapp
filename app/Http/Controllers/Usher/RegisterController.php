@@ -834,16 +834,17 @@ class RegisterController extends Controller
             $message .= "Valid for: " . implode(", ", $validDays) . "\n\n";
             
             // Add payment information if applicable
-            if ($participant->payment_status === 'Not Paid') {
-                $message .= "Payment Required: KES " . number_format($participant->payment_amount, 2) . "\n";
-                $message .= "Pay via:\n";
-                $message .= "M-Pesa Paybill: 303030\n";
-                $message .= "Account: 2031653161\n";
-                $message .= "Please complete payment to attend.";
-            } elseif ($participant->payment_status === 'Paid via M-Pesa' || $participant->payment_status === 'Paid via Vabu') {
-                $message .= "Welcome to Zetech University"; 
-                $message .= "For more information about the conference, visit https://conference.zetech.ac.ke You can also view the full program at https://conference.zetech.ac.ke/index.php/conference-2025/program";}
-            
+                if ($participant->payment_status === 'Not Paid') {
+                    $message .= "Payment Required: KES " . number_format($participant->payment_amount, 2) . "\n";
+                    $message .= "Pay via:\n";
+                    $message .= "M-Pesa Paybill: 303030\n";
+                    $message .= "Account: 2031653161\n";
+                    $message .= "Please complete payment to attend.";
+                } elseif ($participant->payment_status === 'Paid via M-Pesa' || $participant->payment_status === 'Paid via Vabu') {
+                    $message .= "Welcome to Zetech University. ";
+                    $message .= "For more information about the conference, visit https://conference.zetech.ac.ke. You can also view the full program at https://conference.zetech.ac.ke/index.php/conference-2025/program";
+                }
+       
             // Send SMS with retry logic
             $retryCount = 0;
             $maxRetries = 3;

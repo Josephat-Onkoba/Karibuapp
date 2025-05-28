@@ -42,7 +42,7 @@ class TicketSmsNotification extends Notification
         $message .= "Your RIW25 Conference ticket has been generated.\n";
         $message .= "Access Ticket: {$this->ticket->ticket_number}\n";
         $message .= "Valid for: " . implode(', ', $validDays) . "\n";
-        $message .= "For more information about the conference, visit https://conference.zetech.ac.ke. You can also view the full program at https://conference.zetech.ac.ke/index.php/conference-2025/program"
+        $message .= "For more information about the conference, visit https://conference.zetech.ac.ke. You can also view the full program at https://conference.zetech.ac.ke/index.php/conference-2025/program";
 
         return [
             'phone' => $notifiable->phone_number,
