@@ -8,7 +8,6 @@ use App\Models\ConferenceDay;
 use App\Models\Participant;
 use App\Models\Payment;
 use App\Models\Ticket;
-use App\Notifications\RegistrationConfirmationNotification;
 use App\Services\TalkSasaSmsService;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Http\Request;
@@ -877,18 +876,6 @@ class RegisterController extends Controller
                         sleep(1);
                     }
                 }
-            }
-            
-            // Send email notification
-            try {
-                Notification::send($participant, new RegistrationConfirmationNotification($participant, $ticket));
-                $emailSent = true;
-            } catch (\Exception $e) {
-                Log::error('Failed to send registration email', [
-                    'participant_id' => $participant->id,
-                    'error' => $e->getMessage()
-                ]);
-                $emailSent = false;
             }
             
             // Log registration completion
