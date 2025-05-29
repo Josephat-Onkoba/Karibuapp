@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Usher;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Participant;
-use App\Models\ConferenceDay;
-use App\Models\CheckIn;
-use App\Models\Ticket;
-use App\Models\User;
+use App\Models\{
+    Participant,
+    ConferenceDay,
+    CheckIn,
+    Ticket,
+    User
+};
 use Illuminate\Support\Facades\Auth;
 // use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -98,8 +100,21 @@ class CheckInController extends Controller
         }
         
         try {
-            $participant = Participant::with(['ticket', 'checkIns'])->find($validated['participant_id']);
-            $conferenceDay = ConferenceDay::find($validated['conference_day_id']);
+            // Get the participant with relationships
+            $participant = Participant::with(['ticket', 'checkIns'])
+                ->findOrFail($validated['participant_id']);
+                
+            // Get the conference day
+            $conferenceDay = ConferenceDay::findOrFail($validated['conference_day_id']);
+            
+            // Ensure we have model instances, not collections
+            if (!$participant instanceof \App\Models\Participant) {
+                throw new \RuntimeException('Invalid participant data');
+            }
+            
+            if (!$conferenceDay instanceof \App\Models\ConferenceDay) {
+                throw new \RuntimeException('Invalid conference day data');
+            }
             
             // Check payment eligibility for the day
             $paymentEligibility = $this->checkPaymentEligibility($participant, $conferenceDay);
@@ -122,18 +137,26 @@ class CheckInController extends Controller
             DB::beginTransaction();
             
             // Check if participant has any ticket history
-            $hasTicketHistory = Ticket::where('participant_id', $participant->id)->exists();
+            $hasTicketHistory = $participant->ticket()->exists();
             
             // Check if already checked in for this specific day
             $alreadyCheckedInToday = CheckIn::where('participant_id', $participant->id)
                 ->where('conference_day_id', $conferenceDay->id)
                 ->exists();
                 
-            // Get or create appropriate ticket
+            // Get or create appropriate ticket - ensure we're passing model instances
             $ticket = $this->getOrCreateTicket($participant, $conferenceDay);
+            
+            // Verify we got a valid ticket instance
+            if (!$ticket instanceof \App\Models\Ticket) {
+                throw new \RuntimeException('Failed to get or create ticket');
+            }
             
             // Send notifications for first check-in or when checking in on a new day
             if (!$hasTicketHistory || !$alreadyCheckedInToday) {
+                // Ensure we have the latest ticket data with relationships
+                $ticket->load(['participant']);
+                
                 // Send ticket via email
                 try {
                     $mail = new TicketMail($ticket);
@@ -149,23 +172,24 @@ class CheckInController extends Controller
                     Log::error('Failed to send ticket email: ' . $e->getMessage());
                 }
                 
-                // Send SMS notification if phone number is available
-                if ($participant->phone_number) {
-                    try {
-                        // Send SMS notification using TalkSasaSmsService
-                        $dayName = $conferenceDay->name ?? 'Day ' . $conferenceDay->id;
-                        $message = "Hello {$participant->full_name}, welcome to {$dayName}! Your Access ticket number is: {$ticket->ticket_number}. Thank you for attending!";
-                        $this->smsService->sendSms($participant->phone_number, $message);
-                        
-                        Log::info('Ticket SMS notification sent to', [
-                            'participant_id' => $participant->id,
-                            'phone' => $participant->phone_number,
-                            'conference_day' => $conferenceDay->id,
-                            'is_first_checkin' => !$hasTicketHistory
-                        ]);
-                    } catch (\Exception $e) {
-                        Log::error('Failed to send ticket SMS: ' . $e->getMessage());
-                    }
+                // Send SMS notification using the notification system
+                try {
+                    // The TicketSmsNotification will handle the phone number validation
+                    $participant->notify(new \App\Notifications\TicketSmsNotification($ticket));
+                    
+                    Log::info('Ticket SMS notification queued for sending', [
+                        'participant_id' => $participant->id,
+                        'phone' => $participant->phone_number,
+                        'ticket_number' => $ticket->ticket_number,
+                        'conference_day' => $conferenceDay->id,
+                        'is_first_checkin' => !$hasTicketHistory
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send ticket SMS notification: ' . $e->getMessage(), [
+                        'participant_id' => $participant->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
                 }
             }
         
@@ -214,7 +238,14 @@ class CheckInController extends Controller
     /**
      * Check payment eligibility for a specific day
      */
-    private function checkPaymentEligibility(Participant $participant, ConferenceDay $conferenceDay): array
+    /**
+     * Check payment eligibility for a participant on a specific conference day.
+     *
+     * @param \App\Models\Participant $participant
+     * @param \App\Models\ConferenceDay $conferenceDay
+     * @return array
+     */
+    private function checkPaymentEligibility(\App\Models\Participant $participant, \App\Models\ConferenceDay $conferenceDay): array
     {
         // If participant category doesn't require payment
         if (in_array($participant->category, ['invited', 'internal', 'coordinators'])) {
@@ -279,7 +310,13 @@ class CheckInController extends Controller
     /**
      * Calculate required payment for additional day
      */
-    private function calculateRequiredPayment(Participant $participant): float
+    /**
+     * Calculate the required payment for a participant.
+     *
+     * @param \App\Models\Participant $participant
+     * @return float
+     */
+    private function calculateRequiredPayment(\App\Models\Participant $participant): float
     {
         // Base payment for one day
         return match($participant->category) {
@@ -298,7 +335,14 @@ class CheckInController extends Controller
     /**
      * Get existing valid ticket or create new one
      */
-    private function getOrCreateTicket(Participant $participant, ConferenceDay $conferenceDay): Ticket
+    /**
+     * Get an existing valid ticket or create a new one.
+     *
+     * @param \App\Models\Participant $participant
+     * @param \App\Models\ConferenceDay $conferenceDay
+     * @return \App\Models\Ticket
+     */
+    private function getOrCreateTicket(\App\Models\Participant $participant, \App\Models\ConferenceDay $conferenceDay): \App\Models\Ticket
     {
             // Get the existing active ticket
             $activeTicket = Ticket::where('participant_id', $participant->id)

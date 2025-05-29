@@ -8,7 +8,9 @@ use App\Models\ConferenceDay;
 use App\Models\Participant;
 use App\Models\Payment;
 use App\Models\Ticket;
+use App\Notifications\RegistrationConfirmationNotification;
 use App\Services\TalkSasaSmsService;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -877,6 +879,18 @@ class RegisterController extends Controller
                 }
             }
             
+            // Send email notification
+            try {
+                Notification::send($participant, new RegistrationConfirmationNotification($participant, $ticket));
+                $emailSent = true;
+            } catch (\Exception $e) {
+                Log::error('Failed to send registration email', [
+                    'participant_id' => $participant->id,
+                    'error' => $e->getMessage()
+                ]);
+                $emailSent = false;
+            }
+            
             // Log registration completion
             Log::info('Registration completed', [
                 'participant_id' => $participant->id,
@@ -884,7 +898,8 @@ class RegisterController extends Controller
                 'category' => $participant->category,
                 'payment_status' => $participant->payment_status,
                 'sms_success' => $smsSuccess,
-                'sms_retries' => $retryCount
+                'sms_retries' => $retryCount,
+                'email_sent' => $emailSent ?? false
             ]);
             
             DB::commit();
@@ -893,8 +908,18 @@ class RegisterController extends Controller
             Session::forget('registration_data');
             
             $successMessage = 'Registration completed successfully!';
+            $notifications = [];
+            
             if (!$smsSuccess) {
-                $successMessage .= ' However, the SMS notification could not be sent.';
+                $notifications[] = 'SMS notification could not be sent';
+            }
+            
+            if (!($emailSent ?? false)) {
+                $notifications[] = 'Email notification could not be sent';
+            }
+            
+            if (!empty($notifications)) {
+                $successMessage .= ' However, ' . implode(' and ', $notifications) . '.';
             }
             
             return redirect()->route('usher.registration.ticket', ['ticket' => $ticket->id])
